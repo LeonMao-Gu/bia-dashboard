@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>体成分趋势 · Body Composition</title>
+<style>
+/* ============ Design tokens ============ */
+:root{
+  --bg:#F5F5F7; --card:#FFFFFF; --label:#1D1D1F; --label-2:#424245; --label-3:#6E6E73; --label-4:#8E8E93;
+  --sep:#E5E5EA; --sep-2:#D2D2D7; --fill:#F2F2F7;
+  --accent:#0A6CFF; --green-t:#248A3D; --red-t:#D70015;
+  --fat:#E8632C; --muscle:#1E8E50; --blue:#0A6CFF; --gold:#B0851E; --water:#0A84B8; --slate:#64748B; --plum:#8A6FA0; --moss:#7A8B3A; --brown:#9C6B3F;
+  --shadow:0 .5px 1px rgba(0,0,0,.04),0 6px 20px -12px rgba(0,0,0,.16);
+  --shadow-sel:0 .5px 2px rgba(0,0,0,.12),0 1px 1px rgba(0,0,0,.05);
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+ :root{--bg:#000;--card:#1C1C1E;--label:#F5F5F7;--label-2:#D4D4D8;--label-3:#98989F;--label-4:#7C7C82;
+   --sep:#2C2C2E;--sep-2:#3A3A3C;--fill:#2C2C2E;--accent:#0A84FF;--green-t:#41D265;--red-t:#FF6961;
+   --fat:#FF8A4C;--muscle:#41D265;--blue:#409CFF;--gold:#E0B341;--water:#40C4E8;
+   --shadow:0 .5px 1px rgba(0,0,0,.5),0 8px 24px -12px rgba(0,0,0,.6);--shadow-sel:0 .5px 2px rgba(0,0,0,.5)}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--label);font-family:var(--sans);font-size:15px;line-height:1.47;
+  -webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+.tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.page{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+/* inline SVG icons (no external font dependency) */
+.ic{width:1em;height:1em;display:inline-block;vertical-align:-.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.daynav .ic,.calnav .ic{width:15px;height:15px}
+
+/* ---- header ---- */
+header{padding:48px 0 8px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--label-4)}
+h1{font-size:clamp(30px,4.6vw,42px);font-weight:700;letter-spacing:-.022em;line-height:1.05;margin-top:10px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:24px}
+
+/* ---- section header ---- */
+.sec{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:46px 0 16px}
+.sec .e{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--label-4);margin-bottom:5px}
+.sec h2{font-size:21px;font-weight:640;letter-spacing:-.014em}
+.sec p{font-size:13px;color:var(--label-3);margin-top:5px;max-width:560px}
+
+/* ---- card ---- */
+.card{background:var(--card);border:.5px solid var(--sep-2);border-radius:18px;box-shadow:var(--shadow);transition:box-shadow .25s,transform .25s}
+.card-hover:hover{box-shadow:0 .5px 1px rgba(0,0,0,.05),0 16px 40px -18px rgba(0,0,0,.28);transform:translateY(-2px)}
+.pad{padding:22px}
+@media(max-width:600px){.pad{padding:18px}}
+
+/* ---- summary block ---- */
+.sblk{padding:15px 16px}
+.sblk .l{font-size:11.5px;font-weight:500;color:var(--label-3)}
+.sblk .m{font-size:19px;font-weight:600;margin-top:6px;letter-spacing:-.01em}
+.sblk .s{font-size:12px;margin-top:2px;color:var(--label-4)}
+
+/* ---- KPI ---- */
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.stat{padding:15px}
+.stat .lab{font-size:12px;font-weight:500;color:var(--label-3);display:flex;align-items:center;gap:6px}
+.stat .lab .sw{width:7px;height:7px;border-radius:2px}
+.stat .val{font-size:27px;font-weight:600;letter-spacing:-.02em;margin-top:8px;line-height:1.02}
+.stat .val u{font-size:13px;font-weight:500;color:var(--label-3);text-decoration:none;margin-left:2px}
+.stat .delta{font-size:12.5px;font-weight:540;margin-top:4px}
+.stat .delta s{color:var(--label-4);font-weight:400;text-decoration:none}
+.stat .spark{margin-top:10px;height:30px}
+.stat .rng{font-size:11px;color:var(--label-4);margin-top:7px}
+
+/* ---- chips (multi-select) ---- */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{font-size:13px;font-weight:500;padding:6px 12px;border-radius:980px;border:none;background:var(--fill);color:var(--label-2);
+  cursor:pointer;transition:.16s;display:inline-flex;align-items:center;gap:6px;line-height:1}
+.chip .sw{width:8px;height:8px;border-radius:3px;background:currentColor;opacity:.5;transition:.16s}
+.chip .u{opacity:.55;font-size:11px}
+.chip:hover{background:var(--sep)}
+.chip.on{color:#fff}
+.chip.on .sw{opacity:1;background:#fff}
+.chip:disabled{opacity:.38;cursor:not-allowed}
+
+/* ---- segmented ---- */
+.segmented{display:inline-flex;background:var(--fill);border-radius:9px;padding:2px;gap:2px}
+.segmented button{font-size:12.5px;font-weight:510;padding:6px 14px;border:none;background:transparent;color:var(--label-2);
+  border-radius:7px;cursor:pointer;transition:.16s;line-height:1.2;display:inline-flex;align-items:center;gap:6px}
+.segmented button.on{background:var(--card);color:var(--label);box-shadow:var(--shadow-sel);font-weight:560}
+.segmented button:active{transform:scale(.96)}
+
+/* ---- toolbar / chart ---- */
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;flex-wrap:wrap}
+.axhint{font-size:12px;font-weight:500;color:var(--label-3)}
+.hint{font-size:11.5px;color:var(--label-4);display:flex;align-items:center;gap:6px}
+.charthost{position:relative;width:100%}
+/* horizontally scrollable plot with fixed Y axis */
+.cbox{position:relative}
+.yaxis,.raxis{position:absolute;top:0;height:100%;z-index:3;pointer-events:none;background:var(--card)}
+.yaxis{left:0}.raxis{right:0}
+.yaxis svg,.raxis svg{display:block;overflow:visible}
+.cscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.cscroll svg{display:block;overflow:visible}
+.cscroll::-webkit-scrollbar{height:8px}
+.cscroll::-webkit-scrollbar-thumb{background:var(--sep-2);border-radius:4px}
+.cscroll::-webkit-scrollbar-track{background:transparent}
+.scrollcue{font-size:11px;color:var(--label-4);display:flex;align-items:center;gap:5px;margin-top:6px}
+.tip{position:fixed;pointer-events:none;background:rgba(30,30,32,.96);color:#fff;font-size:12px;padding:8px 10px;border-radius:8px;
+  font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:60;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)}
+.tip b{font-weight:600}
+.leg{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px}
+.leg span{font-size:12.5px;color:var(--label-3);display:flex;align-items:center;gap:7px}
+.leg i{width:14px;height:3px;border-radius:2px;display:inline-block}
+
+/* ---- date picker (calendar) ---- */
+.daypick{position:relative;display:flex;align-items:center;gap:6px}
+.daynav{width:32px;height:32px;border-radius:9px;border:.5px solid var(--sep-2);background:var(--fill);color:var(--label-2);
+  cursor:pointer;display:grid;place-items:center;font-size:12px;transition:.16s}
+.daynav:hover:not(:disabled){background:var(--sep);color:var(--label)}
+.daynav:active:not(:disabled){transform:scale(.94)}
+.daynav:disabled{opacity:.35;cursor:not-allowed}
+.daybtn{display:inline-flex;align-items:center;gap:8px;background:var(--fill);border:.5px solid var(--sep-2);color:var(--label);
+  font-size:13px;font-weight:540;padding:8px 13px;border-radius:9px;cursor:pointer;font-variant-numeric:tabular-nums;transition:.16s}
+.daybtn:hover{background:var(--sep)}
+.daybtn .ic:last-child{color:var(--label-4)}
+.calpop{position:absolute;top:calc(100% + 8px);right:0;width:268px;background:var(--card);border:.5px solid var(--sep-2);
+  border-radius:14px;box-shadow:0 12px 40px -12px rgba(0,0,0,.3);padding:14px;z-index:50;
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:.18s}
+.calpop.show{opacity:1;transform:none;pointer-events:auto}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead .m{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.calnav{width:28px;height:28px;border-radius:8px;border:none;background:var(--fill);color:var(--label-2);cursor:pointer;display:grid;place-items:center;font-size:11px;transition:.16s}
+.calnav:hover{background:var(--sep)}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.calgrid .wd{font-size:10.5px;color:var(--label-4);text-align:center;height:22px;display:grid;place-items:center;font-weight:500}
+.calday{aspect-ratio:1;border:none;background:transparent;border-radius:8px;font-size:12.5px;color:var(--label-3);cursor:default;
+  font-variant-numeric:tabular-nums;display:grid;place-items:center;position:relative;transition:.14s}
+.calday.has{color:var(--label);cursor:pointer;font-weight:540}
+.calday.has:hover{background:var(--fill)}
+.calday.has::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.calday.sel{background:var(--accent);color:#fff}
+.calday.sel::after{background:#fff}
+.calday.empty{visibility:hidden}
+
+/* ---- single-day ---- */
+.dayrow{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start}
+.dayside{display:flex;flex-direction:column;align-items:center;gap:18px;width:160px}
+.ring{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--gold) calc(var(--a)*1deg),var(--sep) 0)}
+.ring i{width:76px;height:76px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-style:normal}
+.ring b{font-size:30px;font-weight:700}
+.daytype{display:flex;flex-direction:column;gap:7px;align-items:center}
+.pill{font-size:12px;color:var(--label-2);background:var(--fill);border:.5px solid var(--sep-2);padding:4px 11px;border-radius:980px;white-space:nowrap}
+.daygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.daycell{background:var(--fill);border-radius:12px;padding:11px 13px;transition:.18s}
+.daycell:hover{background:var(--sep)}
+.daycell .l{font-size:11.5px;color:var(--label-3)}
+.daycell .v{font-size:18px;font-weight:600;margin-top:3px}
+.daycell .v u{font-size:12px;font-weight:500;color:var(--label-3);text-decoration:none;margin-left:1px}
+.linkbtn{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;font-weight:540;padding:9px 14px;
+  border-radius:10px;border:.5px solid var(--sep-2);color:var(--label-2);text-decoration:none;transition:.18s}
+.linkbtn:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:translateY(-1px)}
+
+footer{margin-top:48px;padding-top:18px;border-top:.5px solid var(--sep);font-size:12px;color:var(--label-4);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+/* ---- reveal ---- */
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s cubic-bezier(.22,.61,.36,1),transform .6s cubic-bezier(.22,.61,.36,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* ============ responsive ============ */
+@media(max-width:880px){
+ .kpis{grid-template-columns:repeat(3,1fr)}
+ .dayrow{grid-template-columns:1fr;gap:22px}
+ .dayside{flex-direction:row;width:auto;justify-content:flex-start}
+ .daytype{align-items:flex-start}
+ .daygrid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:560px){
+ .page{padding:0 16px 64px}
+ .summary{grid-template-columns:repeat(2,1fr)}
+ .kpis{grid-template-columns:repeat(2,1fr)}
+ .daygrid{grid-template-columns:repeat(2,1fr)}
+ .sec p{display:none}
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">Body&nbsp;Composition</div>
+    <h1>体成分趋势</h1>
+    <div class="summary" id="summary"></div>
+  </header>
+
+  <!-- KPI -->
+  <section class="reveal">
+    <div class="sec"><div><div class="e">Overview</div><h2>关键指标</h2></div>
+      <p style="margin:0">绿色表示向更健康方向变化</p></div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <!-- Core trend -->
+  <section class="reveal">
+    <div class="sec"><div><div class="e">Trend</div><h2>核心趋势</h2>
+      <p>选择板块，叠加任意指标到同一折线图；点上常驻数值，点击任意点同步下方单日视图。</p></div>
+      <div class="segmented" id="boardTabs"></div></div>
+    <div class="card pad">
+      <div class="chips" id="metricChips"></div>
+      <div class="toolbar"><span class="axhint" id="axHint"></span>
+        <span class="hint"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>点击折线上的点查看单日</span></div>
+      <div class="charthost" id="trendChart"></div>
+    </div>
+  </section>
+
+  <!-- Segmental daily trend -->
+  <section class="reveal">
+    <div class="sec"><div><div class="e">Segments</div><h2>节段每日趋势</h2>
+      <p>五个身体部位随时间的脂肪 / 肌肉变化。</p></div>
+      <div class="segmented" id="segTabs">
+        <button class="on" data-seg="fat"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.4 0z"/></svg>脂肪</button>
+        <button data-seg="mus"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8v8M4 9.5v5M18 8v8M20 9.5v5M6 12h12"/></svg>肌肉</button></div></div>
+    <div class="card pad">
+      <div class="charthost" id="segChart"></div>
+      <div class="leg" id="segLegend"></div>
+    </div>
+  </section>
+
+  <!-- Single-day view -->
+  <section class="reveal">
+    <div class="sec"><div><div class="e">Daily</div><h2>单日视图</h2>
+      <p>选择某一天，查看当日完整报告摘要。</p></div>
+      <div class="daypick">
+        <button class="daynav" id="dayPrev" title="上一天"><svg class="ic" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <button class="daybtn" id="dayBtn"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="dayBtnLabel"></span><svg class="ic" viewBox="0 0 24 24" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <button class="daynav" id="dayNext" title="下一天"><svg class="ic" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        <div class="calpop" id="calPop"></div>
+      </div></div>
+    <div class="card pad">
+      <div class="dayrow">
+        <div class="dayside">
+          <div class="ring" id="scoreRing"><i><b class="tnum" id="scoreNum"></b></i></div>
+          <div class="daytype" id="dayType"></div>
+        </div>
+        <div>
+          <div class="daygrid" id="dayGrid"></div>
+          <a id="reportLink" class="linkbtn" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>原始报告截图未发布</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer><span>25 次测量 · 33 数据维度</span><span class="tnum">2026-03-20 → 2026-06-06</span></footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const DATA = [{"date": "2026-03-20", "weight": 67.5, "bf": 20.9, "musM": 50.5, "musP": 74.8, "proM": 10.4, "proP": 15.4, "watM": 39.5, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.1, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.3, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.2, "mLL": 8.5, "mRL": 8.5, "score": 77, "wk": "周五"}, {"date": "2026-03-21", "weight": 67.3, "bf": 20.9, "musM": 50.3, "musP": 74.7, "proM": 10.3, "proP": 15.3, "watM": 39.4, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.1, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.8, "fRA": 0.8, "fTr": 7.2, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.5, "mRL": 8.5, "score": 76, "wk": "周六"}, {"date": "2026-03-25", "weight": 66.8, "bf": 21.0, "musM": 49.9, "musP": 74.7, "proM": 10.3, "proP": 15.4, "watM": 39.1, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.0, "skM": 28.5, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1510, "rec": 2190, "ffm": 52.8, "fLA": 0.8, "fRA": 0.8, "fTr": 7.2, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 22.9, "mLL": 8.4, "mRL": 8.4, "score": 76, "wk": "周三"}, {"date": "2026-03-26", "weight": 66.6, "bf": 21.0, "musM": 49.7, "musP": 74.6, "proM": 10.2, "proP": 15.3, "watM": 39.0, "watP": 58.6, "bonM": 2.9, "bonP": 4.4, "fatM": 14.0, "skM": 28.4, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 27, "smi": 7.2, "bmr": 1506, "rec": 2184, "ffm": 52.6, "fLA": 0.8, "fRA": 0.8, "fTr": 7.1, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 22.8, "mLL": 8.3, "mRL": 8.4, "score": 76, "wk": "周四"}, {"date": "2026-03-27", "weight": 67.25, "bf": 20.6, "musM": 50.5, "musP": 75.1, "proM": 10.4, "proP": 15.5, "watM": 39.5, "watP": 58.8, "bonM": 2.9, "bonP": 4.3, "fatM": 13.8, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.2, "mLL": 8.5, "mRL": 8.5, "score": 77, "wk": "周五"}, {"date": "2026-03-28", "weight": 66.95, "bf": 20.3, "musM": 50.4, "musP": 75.3, "proM": 10.3, "proP": 15.4, "watM": 39.5, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.6, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周六"}, {"date": "2026-03-29", "weight": 67.1, "bf": 20.4, "musM": 50.5, "musP": 75.3, "proM": 10.3, "proP": 15.4, "watM": 39.6, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.7, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.7, "mRA": 2.7, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周日"}, {"date": "2026-04-01", "weight": 67.05, "bf": 20.5, "musM": 50.4, "musP": 75.2, "proM": 10.3, "proP": 15.4, "watM": 39.5, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.7, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.4, "score": 77, "wk": "周三"}, {"date": "2026-04-07", "weight": 66.45, "bf": 19.7, "musM": 50.4, "musP": 75.9, "proM": 10.3, "proP": 15.5, "watM": 39.5, "watP": 59.5, "bonM": 2.9, "bonP": 4.4, "fatM": 13.1, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 6.7, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周二"}, {"date": "2026-04-09", "weight": 66.35, "bf": 19.8, "musM": 50.3, "musP": 75.9, "proM": 10.3, "proP": 15.5, "watM": 39.4, "watP": 59.4, "bonM": 2.9, "bonP": 4.4, "fatM": 13.1, "skM": 28.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.7, "fLL": 2.1, "fRL": 2.1, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周四"}, {"date": "2026-04-12", "weight": 66.2, "bf": 19.6, "musM": 50.3, "musP": 76.0, "proM": 10.3, "proP": 15.6, "watM": 39.4, "watP": 59.5, "bonM": 2.9, "bonP": 4.4, "fatM": 13.0, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.6, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周日"}, {"date": "2026-04-15", "weight": 66.1, "bf": 19.4, "musM": 50.4, "musP": 76.2, "proM": 10.3, "proP": 15.6, "watM": 39.5, "watP": 59.8, "bonM": 2.9, "bonP": 4.4, "fatM": 12.8, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.7, "fRA": 0.7, "fTr": 6.5, "fLL": 2.1, "fRL": 2.1, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 78, "wk": "周三"}, {"date": "2026-04-19", "weight": 66.05, "bf": 19.0, "musM": 50.6, "musP": 76.7, "proM": 10.4, "proP": 15.8, "watM": 39.6, "watP": 60.0, "bonM": 2.9, "bonP": 4.4, "fatM": 12.5, "skM": 28.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1526, "rec": 2213, "ffm": 53.5, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.1, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周日"}, {"date": "2026-04-26", "weight": 65.85, "bf": 18.9, "musM": 50.5, "musP": 76.7, "proM": 10.5, "proP": 16.0, "watM": 39.5, "watP": 60.0, "bonM": 2.9, "bonP": 4.4, "fatM": 12.4, "skM": 28.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.0, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周日"}, {"date": "2026-05-03", "weight": 67.75, "bf": 17.8, "musM": 52.6, "musP": 77.7, "proM": 10.8, "proP": 16.0, "watM": 41.2, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周日"}, {"date": "2026-05-09", "weight": 66.75, "bf": 19.3, "musM": 50.9, "musP": 76.3, "proM": 10.4, "proP": 15.6, "watM": 39.9, "watP": 59.8, "bonM": 2.9, "bonP": 4.3, "fatM": 12.9, "skM": 29.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1532, "rec": 2221, "ffm": 53.8, "fLA": 0.7, "fRA": 0.7, "fTr": 6.6, "fLL": 2.1, "fRL": 2.1, "mLA": 2.7, "mRA": 2.7, "mTr": 23.3, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周六"}, {"date": "2026-05-11", "weight": 66.95, "bf": 19.0, "musM": 51.3, "musP": 76.7, "proM": 10.6, "proP": 15.8, "watM": 40.1, "watP": 59.9, "bonM": 2.9, "bonP": 4.3, "fatM": 12.7, "skM": 29.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.5, "bmr": 1541, "rec": 2234, "ffm": 54.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.5, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.5, "mLL": 8.6, "mRL": 8.7, "score": 79, "wk": "周一"}, {"date": "2026-05-13", "weight": 66.65, "bf": 18.5, "musM": 51.4, "musP": 77.2, "proM": 10.6, "proP": 15.9, "watM": 40.2, "watP": 60.4, "bonM": 2.9, "bonP": 4.4, "fatM": 12.3, "skM": 29.3, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.5, "bmr": 1543, "rec": 2237, "ffm": 54.3, "fLA": 0.7, "fRA": 0.7, "fTr": 6.4, "fLL": 2.0, "fRL": 2.1, "mLA": 2.7, "mRA": 2.7, "mTr": 23.5, "mLL": 8.6, "mRL": 8.6, "score": 79, "wk": "周三"}, {"date": "2026-05-21", "weight": 66.2, "bf": 18.4, "musM": 51.1, "musP": 77.2, "proM": 10.5, "proP": 15.9, "watM": 40.0, "watP": 60.4, "bonM": 2.9, "bonP": 4.4, "fatM": 12.2, "skM": 29.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.4, "bmr": 1536, "rec": 2227, "ffm": 54.0, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.4, "mLL": 8.5, "mRL": 8.6, "score": 79, "wk": "周四"}, {"date": "2026-05-26", "weight": 67.55, "bf": 18.4, "musM": 52.2, "musP": 77.3, "proM": 10.7, "proP": 15.9, "watM": 40.8, "watP": 60.4, "bonM": 2.9, "bonP": 4.3, "fatM": 12.4, "skM": 29.6, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1560, "rec": 2262, "ffm": 55.1, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周二"}, {"date": "2026-06-01", "weight": 67.45, "bf": 18.0, "musM": 52.3, "musP": 77.6, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.8, "bonM": 3.0, "bonP": 4.5, "fatM": 12.1, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.8, "mRL": 8.8, "score": 80, "wk": "周一"}, {"date": "2026-06-02", "weight": 67.7, "bf": 17.8, "musM": 52.6, "musP": 77.7, "proM": 10.8, "proP": 16.0, "watM": 41.2, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.9, "mRL": 8.9, "score": 81, "wk": "周二"}, {"date": "2026-06-04", "weight": 67.15, "bf": 17.6, "musM": 52.3, "musP": 77.9, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 61.1, "bonM": 3.0, "bonP": 4.5, "fatM": 11.8, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周四"}, {"date": "2026-06-05", "weight": 66.8, "bf": 17.6, "musM": 52.0, "musP": 77.8, "proM": 10.7, "proP": 16.0, "watM": 40.7, "watP": 60.9, "bonM": 3.0, "bonP": 4.5, "fatM": 11.8, "skM": 29.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1558, "rec": 2259, "ffm": 55.0, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周五"}, {"date": "2026-06-06", "weight": 66.7, "bf": 17.2, "musM": 52.3, "musP": 78.4, "proM": 10.7, "proP": 16.0, "watM": 40.9, "watP": 61.3, "bonM": 2.9, "bonP": 4.3, "fatM": 11.5, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1562, "rec": 2265, "ffm": 55.2, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周六"}];
+const tip=document.getElementById('tip');
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={})=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+const txt=(x,y,s,o={})=>{const t=el('text',{x,y,'text-anchor':o.anchor||'start','font-size':o.size||11,fill:o.fill||'var(--label)','font-weight':o.weight||400});t.style.fontVariantNumeric='tabular-nums';t.textContent=s;return t;};
+const sd=d=>d.slice(5).replace('-','/');
+const first=DATA[0],last=DATA[DATA.length-1],N=DATA.length;
+let selDay=N-1;
+
+const M={
+ weight:{name:'体重',unit:'kg',dec:1,c:'var(--blue)',good:'flat'},
+ bf:{name:'体脂率',unit:'%',dec:1,c:'var(--fat)',good:'down'},
+ fatM:{name:'脂肪量',unit:'kg',dec:1,c:'var(--fat)',good:'down'},
+ musM:{name:'肌肉量',unit:'kg',dec:1,c:'var(--muscle)',good:'up'},
+ skM:{name:'骨骼肌量',unit:'kg',dec:1,c:'var(--muscle)',good:'up'},
+ ffm:{name:'去脂体重',unit:'kg',dec:1,c:'var(--slate)',good:'up'},
+ watM:{name:'体水分量',unit:'kg',dec:1,c:'var(--water)',good:'up'},
+ proM:{name:'蛋白质量',unit:'kg',dec:1,c:'var(--moss)',good:'up'},
+ bonM:{name:'骨盐量',unit:'kg',dec:1,c:'var(--slate)',good:'up'},
+ musP:{name:'肌肉率',unit:'%',dec:1,c:'var(--muscle)',good:'up'},
+ watP:{name:'身体水分',unit:'%',dec:1,c:'var(--water)',good:'up'},
+ proP:{name:'蛋白质率',unit:'%',dec:1,c:'var(--moss)',good:'up'},
+ bonP:{name:'骨盐率',unit:'%',dec:1,c:'var(--slate)',good:'up'},
+ vis:{name:'内脏脂肪',unit:'级',dec:0,c:'var(--gold)',good:'down'},
+ bmr:{name:'基础代谢',unit:'kcal',dec:0,c:'var(--brown)',good:'up'},
+ rec:{name:'建议热量',unit:'kcal',dec:0,c:'var(--brown)',good:'up'},
+ smi:{name:'骨骼肌指数',unit:'',dec:1,c:'var(--muscle)',good:'up'},
+ bage:{name:'身体年龄',unit:'岁',dec:0,c:'var(--plum)',good:'down'},
+ score:{name:'身体得分',unit:'分',dec:0,c:'var(--gold)',good:'up'},
+};
+const arr=k=>DATA.map(d=>d[k]);
+const judge=(k,delta)=>{const m=M[k];if(m.good==='flat')return delta<0?'down':'up';if(Math.abs(delta)<1e-9)return'flat';return (delta<0)===(m.good==='down')?'up':'down';};
+
+/* ===== summary ===== */
+function blk(l,m,s,sc){return `<div class="card card-hover sblk"><div class="l">${l}</div><div class="m tnum">${m}</div>${s?`<div class="s tnum" style="color:${sc||'var(--label-4)'}">${s}</div>`:''}</div>`;}
+const bfDelta=+(last.bf-first.bf).toFixed(1);
+document.getElementById('summary').innerHTML=
+ blk('时间范围',`${sd(first.date)} – ${sd(last.date)}`,'约 11 周')+
+ blk('测量次数',`${N} 次`,'平稳记录')+
+ blk('体脂率',`${first.bf}% → ${last.bf}%`,`${bfDelta>0?'+':''}${bfDelta} 个百分点`,bfDelta<0?'var(--green-t)':'var(--red-t)')+
+ blk('身体类型',`${first.type} → ${last.type}`,last.type==='健康型'?'已进入健康区间':'');
+
+/* ===== KPI ===== */
+function spark(k,color){const v=arr(k),w=150,h=30,mn=Math.min(...v),mx=Math.max(...v),p=4;
+ const X=i=>p+i*(w-2*p)/(v.length-1),Y=val=>h-p-(val-mn)/((mx-mn)||1)*(h-2*p);
+ const s=el('svg',{viewBox:`0 0 ${w} ${h}`,preserveAspectRatio:'none',class:'spark'});s.style.width='100%';s.style.display='block';
+ let d='';v.forEach((val,i)=>d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(val).toFixed(1)+' ');
+ s.append(el('path',{d:d+`L${X(v.length-1)} ${h} L${X(0)} ${h} Z`,fill:color,opacity:.07}));
+ s.append(el('path',{d,fill:'none',stroke:color,'stroke-width':1.7,'stroke-linejoin':'round','stroke-linecap':'round'}));
+ s.append(el('circle',{cx:X(v.length-1),cy:Y(v[v.length-1]),r:2.3,fill:color}));return s;}
+const kbox=document.getElementById('kpis');
+['bf','weight','skM','fatM','vis','score'].forEach((k,i)=>{const m=M[k],v1=last[k],delta=+(v1-first[k]).toFixed(m.dec);
+ const dir=judge(k,delta),cls=dir==='up'?'var(--green-t)':dir==='down'?'var(--red-t)':'var(--label-3)';
+ const v=arr(k),mn=Math.min(...v),mx=Math.max(...v);
+ const c=document.createElement('div');c.className='card card-hover stat reveal';c.style.transitionDelay=(i*55)+'ms';
+ c.innerHTML=`<div class="lab"><span class="sw" style="background:${m.c}"></span>${m.name}</div>
+  <div class="val tnum">${v1}<u>${m.unit}</u></div>
+  <div class="delta tnum" style="color:${cls}">${delta>0?'+':''}${delta}${m.unit} <s>较首测</s></div>
+  <div class="spark"></div><div class="rng tnum">区间 ${mn} – ${mx}</div>`;
+ c.querySelector('.spark').appendChild(spark(k,m.c));kbox.appendChild(c);});
+
+/* ===== shared line chart: fixed Y axis + horizontally scrollable plot (no compression) =====
+   Each data point gets a fixed pixel step; when total width exceeds the panel,
+   the plot scrolls horizontally while the Y axis stays pinned. */
+const PLOT_H=300, T=18, B=34, PAD_L=12, PAD_R=16, MIN_STEP=26;
+function drawLines(host,series,opt={}){
+ host.innerHTML='';
+ const unitL=series[0].unit, unitR=(series.find(s=>s.unit!==unitL)||{}).unit;
+ const dual=unitR!==undefined;
+ const yW=46, ryW=dual?50:0;
+ const avail=Math.max(220,(host.getBoundingClientRect().width||700)-yW-ryW);
+ const plotW=Math.max(avail, PAD_L+PAD_R+(N-1)*MIN_STEP);
+ const scrolls=plotW>avail+1;
+ const X=i=>PAD_L+i*(plotW-PAD_L-PAD_R)/(N-1);
+ const axisOf=s=>s.unit===unitL?0:1;
+ const dom=[0,1].map(ax=>{let lo=Infinity,hi=-Infinity;series.forEach(s=>{if(axisOf(s)===ax)s.v.forEach(x=>{lo=Math.min(lo,x);hi=Math.max(hi,x);});});if(lo===Infinity)return null;const p=(hi-lo)*0.2||1;return[lo-p,hi+p];});
+ const Y=(val,ax)=>{const[lo,hi]=dom[ax];return T+(1-(val-lo)/(hi-lo))*(PLOT_H-T-B);};
+ // ---- fixed left Y axis ----
+ const yax=el('svg',{viewBox:`0 0 ${yW} ${PLOT_H}`,width:yW,height:PLOT_H});
+ for(let g=0;g<=4;g++){const yy=T+g*(PLOT_H-T-B)/4;const val=dom[0][1]-(g/4)*(dom[0][1]-dom[0][0]);
+   yax.append(txt(yW-8,yy+3,val.toFixed((dom[0][1]-dom[0][0])<6?1:0),{anchor:'end',size:10,fill:'var(--label-4)'}));}
+ // ---- fixed right Y axis (dual) ----
+ let rax=null;
+ if(dual){const rc=series.find(s=>axisOf(s)===1).c;rax=el('svg',{viewBox:`0 0 ${ryW} ${PLOT_H}`,width:ryW,height:PLOT_H});
+   for(let g=0;g<=4;g++){const yy=T+g*(PLOT_H-T-B)/4;const val=dom[1][1]-(g/4)*(dom[1][1]-dom[1][0]);rax.append(txt(8,yy+3,val.toFixed(1),{anchor:'start',size:10,fill:rc}));}}
+ // ---- scrolling plot ----
+ const svg=el('svg',{viewBox:`0 0 ${plotW} ${PLOT_H}`,width:plotW,height:PLOT_H});
+ for(let g=0;g<=4;g++){const yy=T+g*(PLOT_H-T-B)/4;svg.append(el('line',{x1:0,y1:yy,x2:plotW,y2:yy,stroke:'var(--sep)','stroke-width':g===4?1:.6}));}
+ const xstep=Math.max(1,Math.ceil(58/((plotW-PAD_L-PAD_R)/(N-1))));
+ DATA.forEach((d,i)=>{if(i%xstep===0||i===N-1)svg.append(txt(X(i),PLOT_H-11,sd(d.date),{anchor:'middle',size:10,fill:'var(--label-4)'}));});
+ series.forEach((s,si)=>{const ax=axisOf(s);
+   let d='';s.v.forEach((val,i)=>d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(val,ax).toFixed(1)+' ');
+   if(si===0){const gid='g'+Math.random().toString(36).slice(2,7);const lg=el('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
+     lg.append(el('stop',{offset:'0%','stop-color':s.c,'stop-opacity':.14}),el('stop',{offset:'100%','stop-color':s.c,'stop-opacity':0}));svg.append(lg);
+     svg.append(el('path',{d:d+`L${X(N-1)} ${PLOT_H-B} L${X(0)} ${PLOT_H-B} Z`,fill:`url(#${gid})`}));}
+   svg.append(el('path',{d,fill:'none',stroke:s.c,'stroke-width':si===0?2.4:1.9,'stroke-linejoin':'round','stroke-linecap':'round','stroke-dasharray':si===0?'none':'5 4'}));
+   s.v.forEach((val,i)=>svg.append(el('circle',{cx:X(i),cy:Y(val,ax),r:si===0?2.3:1.9,fill:'var(--card)',stroke:s.c,'stroke-width':1.3})));
+ });
+ if(opt.labels!==false){const p=series[0],lab=Math.max(1,Math.round(N/12)),dec=M[p.key]?M[p.key].dec:1;
+   p.v.forEach((val,i)=>{if(i%lab===0||i===N-1||i===selDay)svg.append(txt(X(i),Y(val,0)-8,(+val).toFixed(dec),{anchor:'middle',size:9.5,fill:p.c,weight:600}));});}
+ svg.append(el('line',{x1:X(selDay),y1:T,x2:X(selDay),y2:PLOT_H-B,stroke:series[0].c,'stroke-width':1,opacity:.35,'stroke-dasharray':'3 3'}));
+ const hl=el('line',{x1:0,y1:T,x2:0,y2:PLOT_H-B,stroke:'var(--label-3)','stroke-width':1,opacity:0});svg.append(hl);
+ const hit=el('rect',{x:0,y:T,width:plotW,height:PLOT_H-T-B,fill:'transparent',style:'cursor:pointer'});svg.append(hit);
+ // ---- assemble DOM ----
+ const box=document.createElement('div');box.className='cbox';
+ const yw=document.createElement('div');yw.className='yaxis';yw.style.width=yW+'px';yw.appendChild(yax);
+ const scr=document.createElement('div');scr.className='cscroll';scr.style.marginLeft=yW+'px';if(dual)scr.style.marginRight=ryW+'px';scr.appendChild(svg);
+ box.appendChild(yw);
+ if(dual){const rw=document.createElement('div');rw.className='raxis';rw.style.width=ryW+'px';rw.appendChild(rax);box.appendChild(rw);}
+ box.appendChild(scr);host.appendChild(box);
+ if(scrolls){const cue=document.createElement('div');cue.className='scrollcue';cue.innerHTML='<svg class="ic" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/></svg>左右拖动查看完整时间线';host.appendChild(cue);
+   scr.scrollLeft=scr.scrollWidth;}
+ // ---- interactions ----
+ const idxAt=ev=>{const r=svg.getBoundingClientRect();const sx=(ev.clientX-r.left)/r.width*plotW;let i=Math.round((sx-PAD_L)/((plotW-PAD_L-PAD_R)/(N-1)));return Math.max(0,Math.min(N-1,i));};
+ const move=ev=>{const e=ev.touches?ev.touches[0]:ev;const i=idxAt(e);hl.setAttribute('x1',X(i));hl.setAttribute('x2',X(i));hl.setAttribute('opacity',.4);
+   let html=`<b>${DATA[i].date.slice(5)} ${DATA[i].wk||''}</b>`;series.forEach(s=>html+=`<br><span style="color:${s.c}">●</span> ${s.name} <b>${s.v[i]}${s.unit||''}</b>`);
+   tip.innerHTML=html;tip.style.opacity=1;tip.style.left=Math.min(e.clientX+14,innerWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.max(8,e.clientY-10)+'px';};
+ svg.addEventListener('mousemove',move);svg.addEventListener('mouseleave',()=>{tip.style.opacity=0;hl.setAttribute('opacity',0);});
+ svg.addEventListener('click',ev=>{selDay=idxAt(ev);syncDay();});
+ host._axHint=`左轴 · ${unitL||'—'}`+(dual?`　右轴 · ${unitR||'—'}`:'');
+}
+
+/* ===== boards ===== */
+const BOARDS={
+ core:{label:'核心',metrics:['bf','weight','skM','score'],def:['bf']},
+ mass:{label:'重量',metrics:['weight','fatM','ffm','musM','skM','watM','proM','bonM'],def:['fatM','ffm']},
+ ratio:{label:'比例',metrics:['bf','musP','watP','proP','bonP'],def:['bf','musP']},
+ meta:{label:'代谢评分',metrics:['bmr','rec','score','bage','vis','smi'],def:['score']},
+};
+let board='core',sel=[...BOARDS.core.def];
+const boardTabs=document.getElementById('boardTabs');
+Object.entries(BOARDS).forEach(([k,b])=>{const btn=document.createElement('button');btn.textContent=b.label;if(k===board)btn.classList.add('on');
+ btn.onclick=()=>{board=k;sel=[...b.def];[...boardTabs.children].forEach(x=>x.classList.remove('on'));btn.classList.add('on');renderChips();drawTrend();};boardTabs.appendChild(btn);});
+const distinctUnits=keys=>[...new Set(keys.map(k=>M[k].unit))];
+function renderChips(){const box=document.getElementById('metricChips');box.innerHTML='';
+ BOARDS[board].metrics.forEach(k=>{const m=M[k],on=sel.includes(k),blocked=!on && distinctUnits([...sel,k]).length>2;
+   const b=document.createElement('button');b.className='chip'+(on?' on':'');b.disabled=blocked;if(on)b.style.background=m.c;
+   b.innerHTML=`<span class="sw" style="${on?'':'color:'+m.c}"></span>${m.name}<span class="u">${m.unit||''}</span>`;
+   b.onclick=()=>{if(on){if(sel.length>1)sel=sel.filter(x=>x!==k);}else{if(distinctUnits([...sel,k]).length<=2)sel=[...sel,k];}renderChips();drawTrend();};
+   box.appendChild(b);});}
+function drawTrend(){const series=sel.map(k=>({key:k,name:M[k].name,unit:M[k].unit,v:arr(k),c:M[k].c}));
+ drawLines(document.getElementById('trendChart'),series);
+ document.getElementById('axHint').textContent=document.getElementById('trendChart')._axHint;}
+renderChips();drawTrend();
+
+/* ===== segmental daily trend ===== */
+let segKind='fat';
+const SEGP=[['左臂','LA','var(--fat)'],['右臂','RA','#E58A5C'],['躯干','Tr','var(--blue)'],['左腿','LL','var(--plum)'],['右腿','RL','var(--moss)']];
+document.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-seg]').forEach(x=>x.classList.remove('on'));b.classList.add('on');segKind=b.dataset.seg;drawSeg();});
+function drawSeg(){const pre=segKind==='fat'?'f':'m';
+ const series=SEGP.map(p=>({key:null,name:p[0],unit:'kg',v:arr(pre+p[1]),c:p[2]}));
+ drawLines(document.getElementById('segChart'),series,{labels:false});
+ document.getElementById('segLegend').innerHTML=series.map(s=>`<span><i style="background:${s.c}"></i>${s.name}</span>`).join('');}
+drawSeg();
+
+/* ===== single-day view (calendar picker, no full list) ===== */
+const dateIndex=new Map(DATA.map((d,i)=>[d.date,i]));
+const pad2=n=>String(n).padStart(2,'0');
+const dayBtn=document.getElementById('dayBtn'),dayBtnLabel=document.getElementById('dayBtnLabel'),calPop=document.getElementById('calPop');
+const dayPrev=document.getElementById('dayPrev'),dayNext=document.getElementById('dayNext');
+let viewY,viewM,calOpen=false;
+function reportFile(d){return "#";}
+function syncDay(){renderDay();drawTrend();drawSeg();if(calOpen)renderCal();}
+dayPrev.onclick=()=>{if(selDay>0){selDay--;syncDay();}};      /* 上一天（更早） */
+dayNext.onclick=()=>{if(selDay<N-1){selDay++;syncDay();}};    /* 下一天（更新） */
+dayBtn.onclick=e=>{e.stopPropagation();calOpen=!calOpen;if(calOpen){const[y,m]=DATA[selDay].date.split('-').map(Number);viewY=y;viewM=m;renderCal();}calPop.classList.toggle('show',calOpen);};
+document.addEventListener('click',e=>{if(calOpen&&!calPop.contains(e.target)&&e.target!==dayBtn){calOpen=false;calPop.classList.remove('show');}});
+function renderCal(){
+ const wd=['一','二','三','四','五','六','日'];
+ const firstDow=(new Date(viewY,viewM-1,1).getDay()+6)%7; // Monday-first
+ const days=new Date(viewY,viewM,0).getDate();
+ let html=`<div class="calhead"><button class="calnav" id="calPrev"><svg class="ic" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>`+
+   `<span class="m tnum">${viewY}年${viewM}月</span>`+
+   `<button class="calnav" id="calNext"><svg class="ic" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button></div><div class="calgrid">`;
+ html+=wd.map(w=>`<div class="wd">${w}</div>`).join('');
+ for(let i=0;i<firstDow;i++)html+=`<div class="calday empty"></div>`;
+ for(let day=1;day<=days;day++){const ds=`${viewY}-${pad2(viewM)}-${pad2(day)}`;const has=dateIndex.has(ds);const sel=has&&dateIndex.get(ds)===selDay;
+   html+=`<button class="calday${has?' has':''}${sel?' sel':''}" ${has?`data-d="${ds}"`:'disabled'}>${day}</button>`;}
+ html+='</div>';calPop.innerHTML=html;
+ calPop.querySelector('#calPrev').onclick=ev=>{ev.stopPropagation();viewM--;if(viewM<1){viewM=12;viewY--;}renderCal();};
+ calPop.querySelector('#calNext').onclick=ev=>{ev.stopPropagation();viewM++;if(viewM>12){viewM=1;viewY++;}renderCal();};
+ calPop.querySelectorAll('.calday.has').forEach(b=>b.onclick=ev=>{ev.stopPropagation();selDay=dateIndex.get(b.dataset.d);calOpen=false;calPop.classList.remove('show');syncDay();});
+}
+function renderDay(){const d=DATA[selDay];
+ dayBtnLabel.textContent=`${d.date} ${d.wk||''}`;
+ dayPrev.disabled=selDay<=0;dayNext.disabled=selDay>=N-1;
+ document.getElementById('scoreRing').style.setProperty('--a',d.score*3.6);
+ document.getElementById('scoreNum').textContent=d.score;
+ const cells=[['体重',d.weight,'kg'],['体脂率',d.bf,'%'],['脂肪量',d.fatM,'kg'],['肌肉量',d.musM,'kg'],['骨骼肌量',d.skM,'kg'],['去脂体重',d.ffm,'kg'],['身体水分',d.watP,'%'],['蛋白质率',d.proP,'%'],['骨盐量',d.bonM,'kg'],['内脏脂肪',d.vis,'级'],['基础代谢',d.bmr,'kcal'],['骨骼肌指数',d.smi,'']];
+ document.getElementById('dayGrid').innerHTML=cells.map(([l,v,u])=>`<div class="daycell"><div class="l">${l}</div><div class="v tnum">${v}<u>${u}</u></div></div>`).join('');
+ document.getElementById('dayType').innerHTML=[['日期',`${d.date.slice(5)} ${d.wk||''}`],['身体形态',d.shape],['身体类型',d.type],['身体年龄',d.bage+'岁']].map(([l,v])=>`<span class="pill">${l} · ${v}</span>`).join('');
+ document.getElementById('reportLink').href=reportFile(d);}
+renderDay();
+
+/* ===== responsive: redraw charts on resize (debounced) ===== */
+let _rt;addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(()=>{drawTrend();drawSeg();},160);});
+
+/* ===== reveal on scroll ===== */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.06});
+document.querySelectorAll('.reveal').forEach(x=>io.observe(x));
+</script>
+</body>
+</html>
