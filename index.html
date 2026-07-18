@@ -5,272 +5,291 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>体成分趋势 · Body Composition</title>
+<script>
+(() => {
+  const saved = localStorage.getItem('bia-theme') || 'auto';
+  const dark = saved === 'dark' || (saved === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.dataset.themeMode = saved;
+})();
+</script>
 <style>
 /* ============================================================
-   Design tokens — Apple-style neutrals + materials
+   Calm, adaptive health dashboard
    ============================================================ */
 :root{
-  --bg:#EFEFF4; --bg2:#F7F7FA; --card:#FFFFFF;
-  --label:#1D1D1F; --label-2:#3C3C43; --label-3:#6E6E73; --label-4:#A1A1A8;
-  --sep:rgba(60,60,67,.12); --sep-2:rgba(60,60,67,.2); --fill:rgba(118,118,128,.10); --fill-2:rgba(118,118,128,.16);
-  --glass:rgba(255,255,255,.62); --glass-strong:rgba(255,255,255,.78);
-  --blue:#0A84FF; --green:#30A46C; --green-t:#1E8E50; --red-t:#D70015;
-  --fat:#F0662E; --muscle:#1E9E62; --gold:#C08A1E; --water:#0E9CC4; --slate:#6B7A8F; --plum:#9A6FB0; --moss:#7E8F35; --brown:#A0703F;
-  --r-card:22px; --r-ctl:13px;
-  --shadow-s:0 1px 2px rgba(0,0,0,.04),0 1px 1px rgba(0,0,0,.03);
-  --shadow-m:0 2px 6px rgba(0,0,0,.04),0 12px 30px -14px rgba(0,0,0,.18);
-  --shadow-pop:0 8px 20px -6px rgba(0,0,0,.16),0 24px 60px -18px rgba(0,0,0,.34);
+  color-scheme:light;
+  --canvas:#f5f5f7;--surface:#ffffff;--surface-2:#f0f0f2;
+  --label:#1d1d1f;--label-2:#424245;--label-3:#6e6e73;--label-4:#9a9aa0;
+  --sep:rgba(60,60,67,.14);--sep-strong:rgba(60,60,67,.24);
+  --glass:rgba(250,250,252,.78);--glass-strong:rgba(255,255,255,.92);
+  --glass-stroke:rgba(255,255,255,.68);--glass-rim:rgba(255,255,255,.92);
+  --glass-glow:rgba(255,255,255,.42);--glass-shadow:0 10px 34px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);
+  --glass-lens:rgba(255,255,255,.66);--glass-lens-stroke:rgba(255,255,255,.82);
+  --blue:#0071e3;--green:#238653;--green-t:#147a43;--red-t:#c9342f;
+  --fat:#d84c1b;--muscle:#18895b;--gold:#aa7512;--water:#087fa7;
+  --slate:#607086;--plum:#8b5ca2;--moss:#71822c;--brown:#97633a;
+  --shadow-card:0 1px 2px rgba(0,0,0,.03),0 10px 28px rgba(0,0,0,.06);
+  --shadow-pop:0 18px 50px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
 }
-@media (prefers-color-scheme: dark){
- :root{--bg:#000000;--bg2:#0C0C0E;--card:#1C1C1E;--label:#F5F5F7;--label-2:#D6D6DA;--label-3:#98989F;--label-4:#68686E;
-   --sep:rgba(255,255,255,.12);--sep-2:rgba(255,255,255,.2);--fill:rgba(120,120,128,.24);--fill-2:rgba(120,120,128,.36);
-   --glass:rgba(30,30,33,.62);--glass-strong:rgba(30,30,33,.8);
-   --blue:#0A84FF;--green:#32D583;--green-t:#3DDC84;--red-t:#FF6961;
-   --fat:#FF8A57;--muscle:#3DD68C;--gold:#E3B448;--water:#40C4E8;--slate:#93A2B5;--plum:#C08FD6;--moss:#AEBE55;--brown:#C68F5E;
-   --shadow-s:0 1px 2px rgba(0,0,0,.5);--shadow-m:0 2px 6px rgba(0,0,0,.4),0 14px 34px -14px rgba(0,0,0,.7);
-   --shadow-pop:0 10px 24px -6px rgba(0,0,0,.6),0 30px 70px -18px rgba(0,0,0,.8);}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --canvas:#08080a;--surface:#1c1c1e;--surface-2:#2c2c2e;
+  --label:#f5f5f7;--label-2:#d2d2d7;--label-3:#98989d;--label-4:#707077;
+  --sep:rgba(255,255,255,.12);--sep-strong:rgba(255,255,255,.22);
+  --glass:rgba(22,22,24,.76);--glass-strong:rgba(32,32,35,.94);
+  --glass-stroke:rgba(255,255,255,.16);--glass-rim:rgba(255,255,255,.34);
+  --glass-glow:rgba(255,255,255,.14);--glass-shadow:0 14px 42px rgba(0,0,0,.48),0 2px 10px rgba(0,0,0,.28);
+  --glass-lens:rgba(255,255,255,.12);--glass-lens-stroke:rgba(255,255,255,.2);
+  --blue:#2997ff;--green:#32b873;--green-t:#46d487;--red-t:#ff6961;
+  --fat:#ff8152;--muscle:#39c889;--gold:#dfac3f;--water:#36b9df;
+  --slate:#93a2b5;--plum:#bd8bd2;--moss:#abbc54;--brown:#c38b5d;
+  --shadow-card:0 1px 2px rgba(0,0,0,.35),0 14px 34px rgba(0,0,0,.24);
+  --shadow-pop:0 22px 60px rgba(0,0,0,.58),0 2px 10px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:
-   radial-gradient(120% 60% at 100% 0,rgba(10,132,255,.05),transparent 60%),
-   radial-gradient(90% 50% at 0 0,rgba(30,158,98,.05),transparent 55%),
-   var(--bg);
-  color:var(--label);font-family:var(--sans);font-size:16px;line-height:1.5;letter-spacing:-.01em;
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;min-height:100vh}
+html{scroll-behavior:smooth;scroll-padding-top:86px;-webkit-text-size-adjust:100%}
+body{min-height:100vh;background:var(--canvas);color:var(--label);font-family:var(--sans);font-size:16px;line-height:1.5;letter-spacing:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,a{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 35%,transparent);outline-offset:2px}
 .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
-.page{max-width:1100px;margin:0 auto;padding:0 20px calc(80px + env(safe-area-inset-bottom))}
+.page{max-width:1180px;margin:0 auto;padding:0 24px calc(92px + env(safe-area-inset-bottom))}
 
-/* ---------- translucent sticky header ---------- */
-.topbar{position:sticky;top:0;z-index:40;background:var(--glass);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
-  border-bottom:1px solid var(--sep)}
-.tbin{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1100px;margin:0 auto;padding:11px 20px}
-.topbar .t{font-size:16px;font-weight:640;letter-spacing:-.02em}
-.topbar .g{font-size:13px;color:var(--label-3);font-variant-numeric:tabular-nums;display:flex;gap:10px;align-items:center}
-.topbar .g b{color:var(--fat);font-weight:600}
-@media(max-width:520px){.topbar .g span.hideS{display:none}}
+/* Liquid Glass is reserved for navigation, controls and transient layers. */
+.liquid-filter-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.liquid-surface{--glass-x:50%;--glass-y:0%;--glass-blur:24px;position:relative;isolation:isolate;background:radial-gradient(150px circle at var(--glass-x) var(--glass-y),var(--glass-glow),transparent 68%),var(--glass);border:1px solid var(--glass-stroke);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(255,255,255,.06),var(--glass-shadow);backdrop-filter:blur(var(--glass-blur)) saturate(185%) contrast(1.03);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(185%) contrast(1.03);transition:box-shadow .22s ease,background .22s ease}
+.liquid-surface::before{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;padding:1px;pointer-events:none;background:linear-gradient(135deg,var(--glass-rim),transparent 28%,transparent 68%,color-mix(in srgb,var(--glass-rim) 42%,transparent));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.liquid-surface>*{position:relative;z-index:1}
+.liquid-surface.is-energized{box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(255,255,255,.1),0 13px 38px rgba(0,0,0,.16),0 2px 8px rgba(0,0,0,.08)}
+html.liquid-refraction .liquid-surface{backdrop-filter:url(#liquid-refraction) blur(var(--glass-blur)) saturate(190%) contrast(1.04);-webkit-backdrop-filter:url(#liquid-refraction) blur(var(--glass-blur)) saturate(190%) contrast(1.04)}
 
-/* ---------- hero ---------- */
-header.hero{padding:34px 0 6px}
-.eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--label-4)}
-h1{font-size:clamp(30px,6vw,46px);font-weight:700;letter-spacing:-.03em;line-height:1.02;margin-top:8px}
+/* Floating navigation material */
+.topbar{position:sticky;top:0;z-index:40;height:72px;padding-top:max(8px,env(safe-area-inset-top));background:transparent;pointer-events:none}
+.tbin{height:54px;width:calc(100% - 24px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;max-width:1156px;margin:0 auto;padding:0 14px;border-radius:18px;pointer-events:auto;--glass-blur:28px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--label);text-decoration:none;min-width:0}
+.brand-mark{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:var(--label);color:var(--surface)}
+.brand-mark svg{width:14px;height:14px}
+.brand-copy{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.brand-copy b{font-size:15px;font-weight:650}.brand-copy span{font-size:11px;color:var(--label-4)}
+.section-nav{--items:4;--active-index:0;position:relative;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:3px;background:color-mix(in srgb,var(--surface-2) 64%,transparent);border:1px solid color-mix(in srgb,var(--glass-stroke) 65%,transparent);border-radius:11px;overflow:hidden}
+.section-nav::after,.segmented::after{content:"";position:absolute;z-index:0;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--items));border:1px solid var(--glass-lens-stroke);border-radius:8px;background:var(--glass-lens);box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 1px 4px rgba(0,0,0,.09);transform:translateX(calc(var(--active-index)*100%));transition:transform .38s cubic-bezier(.2,.82,.2,1),background .2s ease}
+.section-nav a{position:relative;z-index:1;min-height:32px;padding:6px 13px;border-radius:8px;color:var(--label-3);text-decoration:none;font-size:12.5px;font-weight:560;display:flex;align-items:center;justify-content:center;transition:color .18s,transform .1s}
+.section-nav a:hover,.section-nav a.current{color:var(--label)}
+.section-nav a:active{transform:scale(.95)}
+.top-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+.glance{font-size:12px;color:var(--label-3);white-space:nowrap}
+.glance b{color:var(--fat);font-weight:650}
+.icon-button{width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--label-2);display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .1s}
+.icon-button:hover{background:var(--surface-2)}.icon-button:active{transform:scale(.9)}
+.icon-button svg{width:18px;height:18px;stroke-width:1.8}
 
-/* ---------- summary strip ---------- */
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
-.sblk{padding:15px 16px}
-.sblk .l{font-size:12px;font-weight:500;color:var(--label-3)}
-.sblk .m{font-size:clamp(17px,2.4vw,20px);font-weight:640;margin-top:7px;letter-spacing:-.02em;line-height:1.05}
-.sblk .s{font-size:12.5px;margin-top:3px;color:var(--label-4);font-weight:500}
+/* Overview */
+.hero{padding:62px 0 38px;border-bottom:1px solid var(--sep)}
+.hero-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:32px}
+.eyebrow{font-size:12px;font-weight:650;color:var(--label-3)}
+h1{font-size:46px;font-weight:720;line-height:1.08;letter-spacing:0;margin-top:8px}
+.hero-meta{font-size:14px;color:var(--label-3);margin-top:12px}
+.hero-current{text-align:right;min-width:230px}
+.hero-current .label{font-size:12px;color:var(--label-3);font-weight:560}
+.hero-value{display:flex;align-items:baseline;justify-content:flex-end;line-height:1;margin-top:7px}
+.hero-value b{font-size:66px;font-weight:720;letter-spacing:0}.hero-value span{font-size:21px;font-weight:600;color:var(--label-3);margin-left:4px}
+.hero-change{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 9px;border-radius:6px;background:color-mix(in srgb,var(--green) 11%,transparent);color:var(--green-t);font-size:12px;font-weight:650}
+.hero-change svg{width:13px;height:13px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);margin-top:42px;border-top:1px solid var(--sep)}
+.sblk{min-width:0;padding:20px 22px 2px 0}
+.sblk+.sblk{border-left:1px solid var(--sep);padding-left:22px}
+.sblk .l{font-size:11.5px;font-weight:560;color:var(--label-3)}
+.sblk .m{font-size:20px;font-weight:650;margin-top:6px;line-height:1.25;overflow-wrap:anywhere}
+.sblk .s{font-size:12px;margin-top:4px;color:var(--label-4);font-weight:520}
 
-/* ---------- section head ---------- */
-.sec{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:42px 0 15px}
-.sec .e{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--label-4);margin-bottom:6px}
-.sec h2{font-size:23px;font-weight:680;letter-spacing:-.02em}
-.sec p{font-size:13px;color:var(--label-3);margin-top:5px;max-width:560px}
-
-/* ---------- card ---------- */
-.card{background:var(--card);border:1px solid var(--sep);border-radius:var(--r-card);box-shadow:var(--shadow-m)}
+/* Sections and repeated metric cards */
+.content-section{padding:48px 0;border-bottom:1px solid var(--sep)}
+.sec{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}
+.sec .e{font-size:11px;font-weight:650;color:var(--label-4);margin-bottom:4px}
+.sec h2{font-size:25px;font-weight:690;line-height:1.2;letter-spacing:0}
+.card{background:var(--surface);border:1px solid var(--sep);border-radius:8px;box-shadow:var(--shadow-card)}
 .pad{padding:22px}
-@media(max-width:600px){.pad{padding:17px}}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{padding:18px;min-height:174px;position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s,box-shadow .18s}
+.stat:hover{transform:translateY(-2px);border-color:var(--sep-strong);box-shadow:0 14px 34px rgba(0,0,0,.09)}
+.stat .lab{font-size:12.5px;font-weight:570;color:var(--label-3);display:flex;align-items:center;gap:7px}
+.stat .lab .sw{width:7px;height:7px;border-radius:2px}
+.stat .val{font-size:32px;font-weight:690;margin-top:14px;line-height:1}
+.stat .val u{font-size:13px;font-weight:540;color:var(--label-3);text-decoration:none;margin-left:3px}
+.stat .delta{font-size:12px;font-weight:630;margin-top:7px}
+.stat .delta s{color:var(--label-4);font-weight:450;text-decoration:none}
+.stat .spark{margin-top:15px;height:30px}.stat .rng{font-size:10.5px;color:var(--label-4);margin-top:8px}
 
-/* ---------- KPI ---------- */
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
-.stat{padding:16px 15px}
-.stat .lab{font-size:12.5px;font-weight:520;color:var(--label-3);display:flex;align-items:center;gap:6px}
-.stat .lab .sw{width:8px;height:8px;border-radius:3px}
-.stat .val{font-size:29px;font-weight:660;letter-spacing:-.03em;margin-top:9px;line-height:1}
-.stat .val u{font-size:13px;font-weight:520;color:var(--label-3);text-decoration:none;margin-left:2px;letter-spacing:0}
-.stat .delta{font-size:12.5px;font-weight:560;margin-top:5px}
-.stat .delta s{color:var(--label-4);font-weight:400;text-decoration:none}
-.stat .spark{margin-top:11px;height:30px}
-.stat .rng{font-size:11px;color:var(--label-4);margin-top:8px}
+/* Compact controls */
+.segmented{--items:4;--active-index:0;position:relative;display:inline-grid;grid-template-columns:repeat(var(--items),max-content);align-items:center;background:color-mix(in srgb,var(--surface-2) 72%,transparent);border:1px solid color-mix(in srgb,var(--glass-stroke) 72%,transparent);border-radius:11px;padding:3px;overflow:hidden}
+.segmented button{position:relative;z-index:1;min-height:34px;font-size:12.5px;font-weight:560;padding:7px 13px;border:0;background:transparent;color:var(--label-3);border-radius:8px;cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,color .18s}
+.segmented button.on{background:transparent;color:var(--label);box-shadow:none;font-weight:650}
+.segmented button:active{transform:scale(.94)}
+.segmented svg{width:15px;height:15px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.chip{min-height:34px;font-size:12.5px;font-weight:570;padding:7px 11px;border-radius:7px;border:1px solid transparent;background:var(--surface-2);color:var(--label-2);cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:transform .1s,background .18s,color .18s,border-color .18s}
+.chip .sw{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.52}.chip .u{opacity:.55;font-size:10.5px}
+.chip:hover{border-color:var(--sep-strong)}.chip:active{transform:scale(.94)}
+.chip.on{color:#fff}.chip.on .sw{opacity:1;background:#fff}.chip:disabled{opacity:.35;cursor:not-allowed}
 
-/* ---------- glass segmented ---------- */
-.segmented{display:inline-flex;background:var(--fill);border-radius:12px;padding:3px;gap:2px;backdrop-filter:blur(8px)}
-.segmented button{font-size:13px;font-weight:540;padding:7px 15px;border:none;background:transparent;color:var(--label-2);
-  border-radius:9px;cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;gap:6px;
-  transition:transform .12s ease,color .2s,background .2s,box-shadow .2s}
-.segmented button.on{background:var(--card);color:var(--label);box-shadow:var(--shadow-s);font-weight:600}
-.segmented button:active{transform:scale(.93)}
-
-/* ---------- chips ---------- */
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.chip{font-size:13px;font-weight:520;padding:7px 13px;border-radius:100px;border:none;background:var(--fill);color:var(--label-2);
-  cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;
-  transition:transform .12s cubic-bezier(.2,.7,.2,1),background .2s,color .2s}
-.chip .sw{width:8px;height:8px;border-radius:3px;background:currentColor;opacity:.5;transition:.2s}
-.chip .u{opacity:.5;font-size:11px}
-.chip:hover{background:var(--fill-2)}
-.chip:active{transform:scale(.92)}
-.chip.on{color:#fff}.chip.on .sw{opacity:1;background:#fff}
-.chip:disabled{opacity:.38;cursor:not-allowed}
-
-/* ---------- chart ---------- */
-.charthost{position:relative;width:100%}
-.cbox{position:relative}
-.yaxis,.raxis{position:absolute;top:0;height:100%;z-index:3;pointer-events:none;
-  background:linear-gradient(90deg,var(--card) 72%,transparent)}
-.raxis{right:0;background:linear-gradient(270deg,var(--card) 72%,transparent)}
-.yaxis{left:0}
+/* Charts */
+.chart-shell{overflow:hidden}
+.chart-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px;margin:0 0 8px}
+.chart-selection{font-size:12px;color:var(--label-2);font-weight:560;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.chart-selection strong{font-weight:680}.chart-selection i{width:4px;height:4px;border-radius:50%;background:var(--label-4)}
+.axhint{font-size:11px;font-weight:520;color:var(--label-4);white-space:nowrap}
+.charthost{position:relative;width:100%}.cbox{position:relative}
+.yaxis,.raxis{position:absolute;top:0;height:100%;z-index:3;pointer-events:none;background:linear-gradient(90deg,var(--surface) 72%,transparent)}
+.raxis{right:0;background:linear-gradient(270deg,var(--surface) 72%,transparent)}.yaxis{left:0}
 .yaxis svg,.raxis svg{display:block;overflow:visible}
-.cscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 8px),transparent);
-  mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 8px),transparent)}
-.cscroll svg{display:block;overflow:visible;transition:opacity .28s ease}
-.cscroll::-webkit-scrollbar{height:7px}
-.cscroll::-webkit-scrollbar-thumb{background:var(--sep-2);border-radius:4px}
-.cscroll::-webkit-scrollbar-track{background:transparent}
-.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;flex-wrap:wrap}
-.axhint{font-size:12px;font-weight:520;color:var(--label-3)}
-.hint{font-size:11.5px;color:var(--label-4);display:flex;align-items:center;gap:6px}
-.scrollcue{font-size:11px;color:var(--label-4);display:flex;align-items:center;gap:5px;margin-top:7px}
-.tip{position:fixed;pointer-events:none;background:var(--glass-strong);backdrop-filter:blur(18px) saturate(180%);
-  color:var(--label);font-size:12.5px;padding:9px 12px;border-radius:12px;font-variant-numeric:tabular-nums;
-  opacity:0;transition:opacity .14s;white-space:nowrap;z-index:60;box-shadow:var(--shadow-pop);border:1px solid var(--sep);font-weight:520}
-.tip b{font-weight:680}
-.leg{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:15px}
-.leg span{font-size:12.5px;color:var(--label-3);display:flex;align-items:center;gap:7px;font-weight:500}
-.leg i{width:15px;height:3px;border-radius:2px;display:inline-block}
+.cscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;cursor:crosshair;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 8px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 8px),transparent)}
+.cscroll svg{display:block;overflow:visible;transition:opacity .22s ease}.cscroll::-webkit-scrollbar{height:6px}.cscroll::-webkit-scrollbar-thumb{background:var(--sep-strong);border-radius:3px}.cscroll::-webkit-scrollbar-track{background:transparent}
+.scrollcue{font-size:10.5px;color:var(--label-4);display:flex;align-items:center;gap:5px;margin-top:6px}.scrollcue svg{width:13px;height:13px}
+.tip{position:fixed;pointer-events:none;color:var(--label);font-size:12px;padding:10px 12px;border-radius:8px;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:70;font-weight:520;--glass-blur:22px}.tip b{font-weight:680}
+.leg{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px}.leg span{font-size:12px;color:var(--label-3);display:flex;align-items:center;gap:7px;font-weight:530}.leg i{width:14px;height:3px;border-radius:2px;display:inline-block}
 
-/* ---------- single-day ---------- */
-.daypick{position:relative;display:flex;align-items:center;gap:7px}
-.daynav,.daybtn{border:1px solid var(--sep);background:var(--fill);color:var(--label);cursor:pointer;
-  transition:transform .12s cubic-bezier(.2,.7,.2,1),background .2s}
-.daynav{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:var(--label-2)}
-.daynav:hover:not(:disabled){background:var(--fill-2)}
-.daynav:active:not(:disabled){transform:scale(.9)}
-.daynav:disabled{opacity:.32;cursor:not-allowed}
-.daybtn{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:560;padding:8px 14px;border-radius:11px;font-variant-numeric:tabular-nums}
-.daybtn:hover{background:var(--fill-2)}
-.daybtn:active{transform:scale(.97)}
-.daybtn .chev{color:var(--label-4)}
-.calpop{position:absolute;top:calc(100% + 10px);right:0;width:280px;z-index:50;padding:15px;
-  background:var(--glass-strong);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);
-  border:1px solid var(--sep-2);border-radius:20px;box-shadow:var(--shadow-pop);
-  transform-origin:top right;opacity:0;transform:scale(.9) translateY(-6px);pointer-events:none;filter:blur(4px)}
+/* Daily inspection */
+.daypick{position:relative;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--glass-stroke);border-radius:12px;background:var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 4px 14px rgba(0,0,0,.07);backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%)}
+.daynav,.daybtn{min-height:38px;border:0;background:transparent;color:var(--label);cursor:pointer;transition:transform .1s,background .18s}
+.daynav{width:38px;border-radius:9px;display:grid;place-items:center;color:var(--label-2)}
+.daynav:hover:not(:disabled),.daybtn:hover{background:var(--glass-lens)}
+.daynav:active:not(:disabled){transform:scale(.9)}.daynav:disabled{opacity:.3;cursor:not-allowed}
+.daybtn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:590;padding:8px 12px;border-radius:9px;font-variant-numeric:tabular-nums;border-left:1px solid var(--sep);border-right:1px solid var(--sep)}.daybtn:active{transform:scale(.96)}
+.daybtn svg,.daynav svg,.calnav svg{width:16px;height:16px}.daybtn .chev{width:12px;height:12px;color:var(--label-4)}
+.calendar-scrim{position:fixed;inset:0;z-index:48;background:rgba(0,0,0,.26);opacity:0;pointer-events:none;transition:opacity .2s}
+.calendar-scrim.show{opacity:1;pointer-events:auto}
+.calpop{position:absolute;top:calc(100% + 10px);right:0;width:292px;z-index:50;padding:15px;border-radius:8px;transform-origin:top right;opacity:0;transform:scale(.94) translateY(-5px);pointer-events:none;filter:blur(3px);transition:opacity .2s,transform .28s cubic-bezier(.2,.8,.2,1),filter .2s;--glass-blur:30px}
 .calpop.show{opacity:1;transform:none;pointer-events:auto;filter:blur(0)}
-.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
-.calhead .m{font-size:15px;font-weight:640;font-variant-numeric:tabular-nums}
-.calnav{width:30px;height:30px;border-radius:9px;border:none;background:var(--fill);color:var(--label-2);cursor:pointer;display:grid;place-items:center;transition:transform .12s,background .2s}
-.calnav:hover{background:var(--fill-2)}.calnav:active{transform:scale(.9)}
-.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.calgrid .wd{font-size:10.5px;color:var(--label-4);text-align:center;height:22px;display:grid;place-items:center;font-weight:520}
-.calday{aspect-ratio:1;border:none;background:transparent;border-radius:10px;font-size:13px;color:var(--label-3);cursor:default;
-  font-variant-numeric:tabular-nums;display:grid;place-items:center;position:relative;transition:transform .12s,background .18s}
-.calday.has{color:var(--label);cursor:pointer;font-weight:560}
-.calday.has:hover{background:var(--fill)}
-.calday.has:active{transform:scale(.88)}
-.calday.has::after{content:"";position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--blue)}
-.calday.sel{background:var(--blue);color:#fff;box-shadow:var(--shadow-s)}
-.calday.sel::after{background:#fff}
-.calday.empty{visibility:hidden}
+.sheet-handle{display:none}.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.calhead .m{font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
+.calnav{width:36px;height:36px;border-radius:7px;border:0;background:var(--surface-2);color:var(--label-2);cursor:pointer;display:grid;place-items:center;transition:transform .1s,background .18s}.calnav:hover{background:color-mix(in srgb,var(--surface-2) 70%,var(--label) 8%)}.calnav:active{transform:scale(.9)}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.calgrid .wd{font-size:10.5px;color:var(--label-4);text-align:center;height:24px;display:grid;place-items:center;font-weight:550}
+.calday{aspect-ratio:1;border:0;background:transparent;border-radius:7px;font-size:12.5px;color:var(--label-3);cursor:default;font-variant-numeric:tabular-nums;display:grid;place-items:center;position:relative;transition:transform .1s,background .18s}.calday.has{color:var(--label);cursor:pointer;font-weight:580}.calday.has:hover{background:var(--surface-2)}.calday.has:active{transform:scale(.86)}.calday.has::after{content:"";position:absolute;bottom:4px;width:3px;height:3px;border-radius:50%;background:var(--blue)}.calday.sel{background:var(--blue);color:#fff}.calday.sel::after{background:#fff}.calday.empty{visibility:hidden}
+.dayrow{display:grid;grid-template-columns:180px minmax(0,1fr);gap:28px;align-items:start}
+.dayside{display:flex;flex-direction:column;align-items:center;gap:17px;padding:4px 0}
+.ring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--gold) calc(var(--a)*1deg),var(--surface-2) 0)}
+.ring i{width:88px;height:88px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-style:normal;box-shadow:inset 0 0 0 1px var(--sep)}.ring b{font-size:34px;font-weight:720}
+.daytype{display:flex;flex-direction:column;gap:6px;align-items:center}.pill{font-size:11.5px;color:var(--label-2);background:var(--surface-2);padding:5px 9px;border-radius:6px;white-space:nowrap;font-weight:530}
+.daygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.daycell{min-height:77px;background:var(--surface-2);border:1px solid transparent;border-radius:7px;padding:11px 12px;transition:transform .15s,border-color .18s}.daycell:hover{border-color:var(--sep-strong);transform:translateY(-1px)}.daycell .l{font-size:11px;color:var(--label-3);font-weight:520}.daycell .v{font-size:19px;font-weight:650;margin-top:4px}.daycell .v u{font-size:11.5px;font-weight:520;color:var(--label-3);text-decoration:none;margin-left:2px}.daycell.flag{background:color-mix(in srgb,var(--muscle) 12%,var(--surface))}
 
-.dayrow{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start}
-.dayside{display:flex;flex-direction:column;align-items:center;gap:18px;width:168px}
-.ring{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;
-  background:conic-gradient(var(--gold) calc(var(--a)*1deg),var(--fill) 0)}
-.ring i{width:82px;height:82px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-style:normal;box-shadow:inset 0 0 0 1px var(--sep)}
-.ring b{font-size:32px;font-weight:720;letter-spacing:-.03em}
-.daytype{display:flex;flex-direction:column;gap:7px;align-items:center}
-.pill{font-size:12px;color:var(--label-2);background:var(--fill);padding:5px 12px;border-radius:100px;white-space:nowrap;font-weight:500}
-.daygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
-.daycell{background:var(--fill);border-radius:15px;padding:12px 14px;transition:transform .14s cubic-bezier(.2,.7,.2,1),background .2s}
-.daycell:hover{background:var(--fill-2);transform:translateY(-2px)}
-.daycell .l{font-size:11.5px;color:var(--label-3);font-weight:500}
-.daycell .v{font-size:19px;font-weight:640;margin-top:4px;letter-spacing:-.02em}
-.daycell .v u{font-size:12px;font-weight:520;color:var(--label-3);text-decoration:none;margin-left:1px}
-.daycell.flag{background:color-mix(in srgb,var(--muscle) 14%,transparent)}
-.linkbtn{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:13.5px;font-weight:560;padding:10px 16px;
-  border-radius:13px;border:1px solid var(--sep);background:var(--fill);color:var(--label);text-decoration:none;
-  transition:transform .12s cubic-bezier(.2,.7,.2,1),background .2s}
-.linkbtn:hover{background:var(--fill-2)}
-.linkbtn:active{transform:scale(.97)}
+footer{margin-top:34px;padding-top:16px;font-size:11.5px;color:var(--label-4);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+#segTabs{--items:2}.mobile-nav{--items:4;--active-index:0;display:none}.mobile-nav a.current{color:var(--label)}.reveal{opacity:0}.reveal.in{opacity:1}
 
-footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--sep);font-size:12px;color:var(--label-4);
-  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-
-.ic{width:1em;height:1em;display:inline-block;vertical-align:-.125em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.daynav .ic,.calnav .ic{width:16px;height:16px}
-
-/* ---------- reveal (spring-driven via JS; CSS fallback) ---------- */
-.reveal{opacity:0}
-.reveal.in{opacity:1}
-
-/* ---------- accessibility: reduced motion / transparency / contrast ---------- */
-@media (prefers-reduced-motion: reduce){
-  html{scroll-behavior:auto}
-  *{transition-duration:.001ms !important}
-  .cscroll svg{transition:opacity .2s ease}
-  .calpop{filter:none !important}
+@media(max-width:900px){
+  .glance{display:none}
+  .hero{padding-top:46px}.hero-head{grid-template-columns:1fr auto}.kpis{grid-template-columns:repeat(3,1fr)}
+  .dayrow{grid-template-columns:1fr;gap:22px}.dayside{flex-direction:row;justify-content:flex-start}.daytype{align-items:flex-start}.daygrid{grid-template-columns:repeat(3,1fr)}
 }
-@media (prefers-reduced-transparency: reduce){
-  .topbar,.calpop,.tip{background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none}
-  .yaxis{background:var(--card)}.raxis{background:var(--card)}
+@media(max-width:720px){.tbin{grid-template-columns:1fr auto}.section-nav{display:none}}
+@media(max-width:640px){
+  html{scroll-padding-top:76px}.page{padding:0 16px calc(112px + env(safe-area-inset-bottom))}.topbar{height:64px;padding-top:max(6px,env(safe-area-inset-top))}
+  .tbin{width:calc(100% - 20px);height:50px;padding:0 10px;border-radius:18px}.brand-copy span{display:none}.brand-mark{width:22px;height:22px}.icon-button{width:38px;height:38px}
+  .hero{padding:28px 0 30px}.hero-head{grid-template-columns:1fr;gap:24px}.eyebrow{font-size:11.5px}h1{font-size:34px;margin-top:5px}.hero-meta{font-size:12.5px;margin-top:9px}
+  .hero-current{text-align:left;min-width:0}.hero-value{justify-content:flex-start}.hero-value b{font-size:60px}.hero-value span{font-size:18px}.hero-current .label{font-size:11.5px}
+  .summary{grid-template-columns:repeat(2,1fr);margin-top:28px}.sblk{padding:14px 12px 13px 0;border-bottom:1px solid var(--sep)}.sblk+.sblk{padding-left:12px}.sblk:nth-child(3){border-left:0;padding-left:0}.sblk .m{font-size:17px}.sblk .s{font-size:11px}
+  .content-section{padding:34px 0}.sec{align-items:flex-start;flex-direction:column;margin-bottom:15px;gap:13px}.sec h2{font-size:22px}.sec .e{font-size:10.5px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat{min-height:158px;padding:14px}.stat:hover{transform:none}.stat .val{font-size:28px}.stat .delta{font-size:11px}.stat .spark{margin-top:12px}.stat .rng{font-size:9.5px}
+  .segmented{max-width:100%;overflow-x:auto;scrollbar-width:none}.segmented::-webkit-scrollbar{display:none}.segmented button{min-width:max-content;min-height:38px;padding:8px 12px}
+  .chart-shell{width:calc(100% + 32px);margin-left:-16px;border-left:0;border-right:0;border-radius:0;padding:16px 16px 14px;box-shadow:none}.chips{flex-wrap:nowrap;overflow-x:auto;margin-right:-16px;padding-right:16px;scrollbar-width:none;scroll-snap-type:x proximity}.chips::-webkit-scrollbar{display:none}.chip{min-width:max-content;min-height:38px;scroll-snap-align:start}.chart-toolbar{align-items:flex-start;flex-direction:column;gap:3px}.chart-selection{font-size:11.5px}.axhint{font-size:10.5px}.cscroll{cursor:default}.tip{display:none}
+  .daypick{width:100%;backdrop-filter:none;-webkit-backdrop-filter:none}.daybtn{flex:1;justify-content:center;min-width:0;min-height:44px}.daynav{width:44px;min-width:44px;height:44px}.dayrow{gap:18px}.dayside{display:grid;grid-template-columns:92px 1fr;gap:14px}.ring{width:88px;height:88px}.ring i{width:68px;height:68px}.ring b{font-size:28px}.daytype{gap:5px}.pill{font-size:10.5px}.daygrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.daycell{min-height:72px;padding:10px}.daycell .v{font-size:18px}
+  .calendar-scrim{display:block}.calpop{position:fixed;top:auto;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;padding:10px 16px 18px;border-radius:8px;transform-origin:bottom center;transform:translateY(24px) scale(.98);filter:blur(3px);transition:opacity .2s,transform .34s cubic-bezier(.2,.8,.2,1),filter .2s}.calpop.show{transform:none}.sheet-handle{height:22px;display:grid;place-items:center;cursor:grab;touch-action:none}.sheet-handle::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--sep-strong)}.calday{min-height:39px;aspect-ratio:auto}
+  .mobile-nav{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:38;display:grid;grid-template-columns:repeat(4,1fr);padding:5px;border-radius:18px;--glass-blur:28px}
+  .mobile-nav::after{content:"";position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/4);border:1px solid var(--glass-lens-stroke);border-radius:13px;background:var(--glass-lens);box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 1px 5px rgba(0,0,0,.1);transform:translateX(calc(var(--active-index)*100%));transition:transform .38s cubic-bezier(.2,.82,.2,1)}
+  .mobile-nav a{position:relative;z-index:1;min-height:48px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--label-3);font-size:9.5px;font-weight:560;text-decoration:none;transition:color .18s,transform .1s}.mobile-nav a:active{transform:scale(.92);color:var(--label)}.mobile-nav svg{width:18px;height:18px;stroke-width:1.8}
+  footer{padding-bottom:8px}
 }
-@media (prefers-contrast: more){
-  :root{--sep:rgba(60,60,67,.5);--label-3:#4A4A4F}
-  .card,.chip,.segmented{border:1px solid var(--sep-2)}
-}
-@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}.dayrow{grid-template-columns:1fr;gap:22px}
-  .dayside{flex-direction:row;width:auto;justify-content:flex-start}.daytype{align-items:flex-start}.daygrid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:560px){.summary{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}.daygrid{grid-template-columns:repeat(2,1fr)}.sec p{display:none}}
+@media(max-width:370px){.page{padding-left:12px;padding-right:12px}.chart-shell{width:calc(100% + 24px);margin-left:-12px;padding-left:12px;padding-right:12px}.stat{min-height:150px;padding:12px}.stat .val{font-size:26px}.sblk{padding-right:8px}.sblk+.sblk{padding-left:8px}.sblk:nth-child(3){padding-left:0}.sblk .m{font-size:16px}}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition-duration:.001ms!important}.cscroll svg{transition:opacity .15s ease}.calpop{filter:none!important}}
+@media(prefers-reduced-transparency:reduce){.liquid-surface,.daypick,html.liquid-refraction .liquid-surface{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}.liquid-surface::before{display:none}.yaxis{background:var(--surface)}.raxis{background:var(--surface)}}
+@media(prefers-contrast:more){:root{--sep:rgba(60,60,67,.48);--label-3:#454548}.card,.chip,.segmented,.daynav,.daybtn{border-color:var(--sep-strong)}}
 </style>
 </head>
 
 <body>
+<svg class="liquid-filter-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="liquid-refraction" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.009 0.013" numOctaves="1" seed="17" result="noise"/>
+      <feGaussianBlur in="noise" stdDeviation="1.2" result="softNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
 <div class="topbar" id="topbar">
-  <div class="tbin">
-    <div class="t">体成分趋势</div>
-    <div class="g tnum" id="glance"></div>
+  <div class="tbin liquid-surface">
+    <a class="brand" href="#overview" aria-label="返回身体成分概览">
+      <span class="brand-mark"><i data-lucide="activity"></i></span>
+      <span class="brand-copy"><b>身体趋势</b><span>Body Composition</span></span>
+    </a>
+    <nav class="section-nav" aria-label="页面导航">
+      <a href="#overview">概览</a>
+      <a href="#trends">趋势</a>
+      <a href="#segments">节段</a>
+      <a href="#daily">单日</a>
+    </nav>
+    <div class="top-actions">
+      <div class="glance tnum" id="glance"></div>
+      <button class="icon-button" id="themeToggle" type="button" aria-label="切换外观" title="外观：跟随系统">
+        <i data-lucide="monitor"></i>
+      </button>
+    </div>
   </div>
 </div>
 
 <div class="page">
-  <header class="hero reveal">
-    <div class="eyebrow">Body&nbsp;Composition</div>
-    <h1>身体成分 · 趋势</h1>
+  <header class="hero reveal" id="overview">
+    <div class="hero-head">
+      <div>
+        <div class="eyebrow">个人身体成分记录</div>
+        <h1>身体成分</h1>
+        <p class="hero-meta tnum" id="heroMeta"></p>
+      </div>
+      <div class="hero-current">
+        <div class="label">最新体脂率</div>
+        <div class="hero-value tnum"><b id="heroBf"></b><span>%</span></div>
+        <div class="hero-change tnum" id="heroChange"></div>
+      </div>
+    </div>
     <div class="summary" id="summary"></div>
   </header>
 
-  <section class="reveal">
-    <div class="sec"><div><div class="e">Overview</div><h2>关键指标</h2></div>
-      <p style="margin:0">绿色表示向更健康方向变化</p></div>
+  <section class="content-section reveal" aria-labelledby="key-metrics-title">
+    <div class="sec"><div><div class="e">最近状态</div><h2 id="key-metrics-title">关键指标</h2></div></div>
     <div class="kpis" id="kpis"></div>
   </section>
 
-  <section class="reveal">
-    <div class="sec"><div><div class="e">Trend</div><h2>核心趋势</h2>
-      <p>切换板块、多选指标叠加到同一折线；切换时曲线以弹簧动效平滑过渡，点上常驻数值。</p></div>
+  <section class="content-section reveal" id="trends" aria-labelledby="trends-title">
+    <div class="sec"><div><div class="e">长期变化</div><h2 id="trends-title">核心趋势</h2></div>
       <div class="segmented" id="boardTabs"></div></div>
-    <div class="card pad">
+    <div class="card pad chart-shell">
       <div class="chips" id="metricChips"></div>
-      <div class="toolbar"><span class="axhint" id="axHint"></span>
-        <span class="hint"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>点击折线上的点查看单日</span></div>
+      <div class="chart-toolbar">
+        <div class="chart-selection tnum" id="trendSelection"></div>
+        <span class="axhint" id="axHint"></span>
+      </div>
       <div class="charthost" id="trendChart"></div>
     </div>
   </section>
 
-  <section class="reveal">
-    <div class="sec"><div><div class="e">Segments</div><h2>节段每日趋势</h2>
-      <p>五个身体部位随时间的脂肪 / 肌肉变化。</p></div>
+  <section class="content-section reveal" id="segments" aria-labelledby="segments-title">
+    <div class="sec"><div><div class="e">身体部位</div><h2 id="segments-title">节段趋势</h2></div>
       <div class="segmented" id="segTabs">
-        <button class="on" data-seg="fat"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.4 0z"/></svg>脂肪</button>
-        <button data-seg="mus"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8v8M4 9.5v5M18 8v8M20 9.5v5M6 12h12"/></svg>肌肉</button></div></div>
-    <div class="card pad">
+        <button class="on" data-seg="fat"><i data-lucide="droplets"></i>脂肪</button>
+        <button data-seg="mus"><i data-lucide="dumbbell"></i>肌肉</button></div></div>
+    <div class="card pad chart-shell">
       <div class="charthost" id="segChart"></div>
       <div class="leg" id="segLegend"></div>
     </div>
   </section>
 
-  <section class="reveal">
-    <div class="sec"><div><div class="e">Daily</div><h2>单日视图</h2>
-      <p>选择某一天，查看当日完整报告摘要。</p></div>
+  <section class="content-section reveal" id="daily" aria-labelledby="daily-title">
+    <div class="sec"><div><div class="e">测量明细</div><h2 id="daily-title">单日视图</h2></div>
       <div class="daypick">
-        <button class="daynav" id="dayPrev" title="上一天"><svg class="ic" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <button class="daybtn" id="dayBtn"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="dayBtnLabel"></span><svg class="ic chev" viewBox="0 0 24 24" style="width:11px;height:11px"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <button class="daynav" id="dayNext" title="下一天"><svg class="ic" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-        <div class="calpop" id="calPop"></div>
+        <button class="daynav" id="dayPrev" type="button" title="上一天" aria-label="上一天"><i data-lucide="chevron-left"></i></button>
+        <button class="daybtn" id="dayBtn" type="button" aria-haspopup="dialog" aria-expanded="false"><i data-lucide="calendar-days"></i><span id="dayBtnLabel"></span><i class="chev" data-lucide="chevron-down"></i></button>
+        <button class="daynav" id="dayNext" type="button" title="下一天" aria-label="下一天"><i data-lucide="chevron-right"></i></button>
+        <div class="calpop liquid-surface" id="calPop" role="dialog" aria-label="选择测量日期"></div>
       </div></div>
     <div class="card pad">
       <div class="dayrow">
@@ -280,7 +299,6 @@ footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--sep);font-siz
         </div>
         <div>
           <div class="daygrid" id="dayGrid"></div>
-          <a id="reportLink" class="linkbtn" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>查看当日原始报告截图</a>
         </div>
       </div>
     </div>
@@ -288,8 +306,16 @@ footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--sep);font-siz
 
   <footer><span id="footL"></span><span class="tnum" id="footR"></span></footer>
 </div>
-<div class="tip" id="tip"></div>
+<div class="calendar-scrim" id="calendarScrim"></div>
+<div class="tip liquid-surface" id="tip"></div>
+<nav class="mobile-nav liquid-surface" aria-label="移动端页面导航">
+  <a href="#overview"><i data-lucide="layout-dashboard"></i><span>概览</span></a>
+  <a href="#trends"><i data-lucide="chart-line"></i><span>趋势</span></a>
+  <a href="#segments"><i data-lucide="person-standing"></i><span>节段</span></a>
+  <a href="#daily"><i data-lucide="calendar-days"></i><span>单日</span></a>
+</nav>
 
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script>
 const DATA = [{"date": "2026-03-20", "weight": 67.5, "bf": 20.9, "musM": 50.5, "musP": 74.8, "proM": 10.4, "proP": 15.4, "watM": 39.5, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.1, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.3, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.2, "mLL": 8.5, "mRL": 8.5, "score": 77, "wk": "周五"}, {"date": "2026-03-21", "weight": 67.3, "bf": 20.9, "musM": 50.3, "musP": 74.7, "proM": 10.3, "proP": 15.3, "watM": 39.4, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.1, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.8, "fRA": 0.8, "fTr": 7.2, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.5, "mRL": 8.5, "score": 76, "wk": "周六"}, {"date": "2026-03-25", "weight": 66.8, "bf": 21.0, "musM": 49.9, "musP": 74.7, "proM": 10.3, "proP": 15.4, "watM": 39.1, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.0, "skM": 28.5, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1510, "rec": 2190, "ffm": 52.8, "fLA": 0.8, "fRA": 0.8, "fTr": 7.2, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 22.9, "mLL": 8.4, "mRL": 8.4, "score": 76, "wk": "周三"}, {"date": "2026-03-26", "weight": 66.6, "bf": 21.0, "musM": 49.7, "musP": 74.6, "proM": 10.2, "proP": 15.3, "watM": 39.0, "watP": 58.6, "bonM": 2.9, "bonP": 4.4, "fatM": 14.0, "skM": 28.4, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 27, "smi": 7.2, "bmr": 1506, "rec": 2184, "ffm": 52.6, "fLA": 0.8, "fRA": 0.8, "fTr": 7.1, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 22.8, "mLL": 8.3, "mRL": 8.4, "score": 76, "wk": "周四"}, {"date": "2026-03-27", "weight": 67.25, "bf": 20.6, "musM": 50.5, "musP": 75.1, "proM": 10.4, "proP": 15.5, "watM": 39.5, "watP": 58.8, "bonM": 2.9, "bonP": 4.3, "fatM": 13.8, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.2, "mLL": 8.5, "mRL": 8.5, "score": 77, "wk": "周五"}, {"date": "2026-03-28", "weight": 66.95, "bf": 20.3, "musM": 50.4, "musP": 75.3, "proM": 10.3, "proP": 15.4, "watM": 39.5, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.6, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周六"}, {"date": "2026-03-29", "weight": 67.1, "bf": 20.4, "musM": 50.5, "musP": 75.3, "proM": 10.3, "proP": 15.4, "watM": 39.6, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.7, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.7, "mRA": 2.7, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周日"}, {"date": "2026-04-01", "weight": 67.05, "bf": 20.5, "musM": 50.4, "musP": 75.2, "proM": 10.3, "proP": 15.4, "watM": 39.5, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.7, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.4, "score": 77, "wk": "周三"}, {"date": "2026-04-07", "weight": 66.45, "bf": 19.7, "musM": 50.4, "musP": 75.9, "proM": 10.3, "proP": 15.5, "watM": 39.5, "watP": 59.5, "bonM": 2.9, "bonP": 4.4, "fatM": 13.1, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 6.7, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周二"}, {"date": "2026-04-09", "weight": 66.35, "bf": 19.8, "musM": 50.3, "musP": 75.9, "proM": 10.3, "proP": 15.5, "watM": 39.4, "watP": 59.4, "bonM": 2.9, "bonP": 4.4, "fatM": 13.1, "skM": 28.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.7, "fLL": 2.1, "fRL": 2.1, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周四"}, {"date": "2026-04-12", "weight": 66.2, "bf": 19.6, "musM": 50.3, "musP": 76.0, "proM": 10.3, "proP": 15.6, "watM": 39.4, "watP": 59.5, "bonM": 2.9, "bonP": 4.4, "fatM": 13.0, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.6, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周日"}, {"date": "2026-04-15", "weight": 66.1, "bf": 19.4, "musM": 50.4, "musP": 76.2, "proM": 10.3, "proP": 15.6, "watM": 39.5, "watP": 59.8, "bonM": 2.9, "bonP": 4.4, "fatM": 12.8, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.7, "fRA": 0.7, "fTr": 6.5, "fLL": 2.1, "fRL": 2.1, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 78, "wk": "周三"}, {"date": "2026-04-19", "weight": 66.05, "bf": 19.0, "musM": 50.6, "musP": 76.7, "proM": 10.4, "proP": 15.8, "watM": 39.6, "watP": 60.0, "bonM": 2.9, "bonP": 4.4, "fatM": 12.5, "skM": 28.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1526, "rec": 2213, "ffm": 53.5, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.1, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周日"}, {"date": "2026-04-26", "weight": 65.85, "bf": 18.9, "musM": 50.5, "musP": 76.7, "proM": 10.5, "proP": 16.0, "watM": 39.5, "watP": 60.0, "bonM": 2.9, "bonP": 4.4, "fatM": 12.4, "skM": 28.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.0, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周日"}, {"date": "2026-05-03", "weight": 67.75, "bf": 17.8, "musM": 52.6, "musP": 77.7, "proM": 10.8, "proP": 16.0, "watM": 41.2, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周日"}, {"date": "2026-05-09", "weight": 66.75, "bf": 19.3, "musM": 50.9, "musP": 76.3, "proM": 10.4, "proP": 15.6, "watM": 39.9, "watP": 59.8, "bonM": 2.9, "bonP": 4.3, "fatM": 12.9, "skM": 29.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1532, "rec": 2221, "ffm": 53.8, "fLA": 0.7, "fRA": 0.7, "fTr": 6.6, "fLL": 2.1, "fRL": 2.1, "mLA": 2.7, "mRA": 2.7, "mTr": 23.3, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周六"}, {"date": "2026-05-11", "weight": 66.95, "bf": 19.0, "musM": 51.3, "musP": 76.7, "proM": 10.6, "proP": 15.8, "watM": 40.1, "watP": 59.9, "bonM": 2.9, "bonP": 4.3, "fatM": 12.7, "skM": 29.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.5, "bmr": 1541, "rec": 2234, "ffm": 54.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.5, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.5, "mLL": 8.6, "mRL": 8.7, "score": 79, "wk": "周一"}, {"date": "2026-05-13", "weight": 66.65, "bf": 18.5, "musM": 51.4, "musP": 77.2, "proM": 10.6, "proP": 15.9, "watM": 40.2, "watP": 60.4, "bonM": 2.9, "bonP": 4.4, "fatM": 12.3, "skM": 29.3, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.5, "bmr": 1543, "rec": 2237, "ffm": 54.3, "fLA": 0.7, "fRA": 0.7, "fTr": 6.4, "fLL": 2.0, "fRL": 2.1, "mLA": 2.7, "mRA": 2.7, "mTr": 23.5, "mLL": 8.6, "mRL": 8.6, "score": 79, "wk": "周三"}, {"date": "2026-05-21", "weight": 66.2, "bf": 18.4, "musM": 51.1, "musP": 77.2, "proM": 10.5, "proP": 15.9, "watM": 40.0, "watP": 60.4, "bonM": 2.9, "bonP": 4.4, "fatM": 12.2, "skM": 29.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.4, "bmr": 1536, "rec": 2227, "ffm": 54.0, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.4, "mLL": 8.5, "mRL": 8.6, "score": 79, "wk": "周四"}, {"date": "2026-05-26", "weight": 67.55, "bf": 18.4, "musM": 52.2, "musP": 77.3, "proM": 10.7, "proP": 15.9, "watM": 40.8, "watP": 60.4, "bonM": 2.9, "bonP": 4.3, "fatM": 12.4, "skM": 29.6, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1560, "rec": 2262, "ffm": 55.1, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周二"}, {"date": "2026-06-01", "weight": 67.45, "bf": 18.0, "musM": 52.3, "musP": 77.6, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.8, "bonM": 3.0, "bonP": 4.5, "fatM": 12.1, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.8, "mRL": 8.8, "score": 80, "wk": "周一"}, {"date": "2026-06-02", "weight": 67.7, "bf": 17.8, "musM": 52.6, "musP": 77.7, "proM": 10.8, "proP": 16.0, "watM": 41.2, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.9, "mRL": 8.9, "score": 81, "wk": "周二"}, {"date": "2026-06-04", "weight": 67.15, "bf": 17.6, "musM": 52.3, "musP": 77.9, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 61.1, "bonM": 3.0, "bonP": 4.5, "fatM": 11.8, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周四"}, {"date": "2026-06-05", "weight": 66.8, "bf": 17.6, "musM": 52.0, "musP": 77.8, "proM": 10.7, "proP": 16.0, "watM": 40.7, "watP": 60.9, "bonM": 3.0, "bonP": 4.5, "fatM": 11.8, "skM": 29.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1558, "rec": 2259, "ffm": 55.0, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周五"}, {"date": "2026-06-06", "weight": 66.7, "bf": 17.2, "musM": 52.3, "musP": 78.4, "proM": 10.7, "proP": 16.0, "watM": 40.9, "watP": 61.3, "bonM": 2.9, "bonP": 4.3, "fatM": 11.5, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1562, "rec": 2265, "ffm": 55.2, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周六"}, {"date": "2026-06-09", "weight": 67.5, "bf": 18.0, "musM": 52.4, "musP": 77.6, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.7, "bonM": 2.9, "bonP": 4.3, "fatM": 12.2, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.7, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周二"}, {"date": "2026-06-10", "weight": 67.4, "bf": 18.0, "musM": 52.4, "musP": 77.7, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.8, "bonM": 2.9, "bonP": 4.3, "fatM": 12.1, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.7, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周三"}, {"date": "2026-06-11", "weight": 67.4, "bf": 17.6, "musM": 52.5, "musP": 77.9, "proM": 10.7, "proP": 15.9, "watM": 41.2, "watP": 61.1, "bonM": 3.0, "bonP": 4.5, "fatM": 11.9, "skM": 29.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1569, "rec": 2275, "ffm": 55.5, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.7, "score": 81, "wk": "周四"}, {"date": "2026-06-15", "weight": 67.1, "bf": 17.1, "musM": 52.6, "musP": 78.4, "proM": 10.7, "proP": 15.9, "watM": 41.3, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.5, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周一"}, {"date": "2026-06-16", "weight": 67.25, "bf": 17.0, "musM": 52.8, "musP": 78.6, "proM": 10.9, "proP": 16.2, "watM": 41.3, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.4, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1575, "rec": 2284, "ffm": 55.8, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.8, "fRL": 1.8, "mLA": 2.9, "mRA": 2.9, "mTr": 24.2, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周二"}, {"date": "2026-06-17", "weight": 67.15, "bf": 17.1, "musM": 52.6, "musP": 78.4, "proM": 10.8, "proP": 16.1, "watM": 41.2, "watP": 61.4, "bonM": 3.0, "bonP": 4.5, "fatM": 11.5, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.8, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周三"}, {"date": "2026-06-21", "weight": 67.7, "bf": 17.5, "musM": 52.9, "musP": 78.1, "proM": 10.9, "proP": 16.1, "watM": 41.4, "watP": 61.2, "bonM": 3.0, "bonP": 4.4, "fatM": 11.8, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周日"}, {"date": "2026-06-22", "weight": 67.65, "bf": 17.3, "musM": 53.0, "musP": 78.4, "proM": 10.9, "proP": 16.1, "watM": 41.4, "watP": 61.2, "bonM": 2.9, "bonP": 4.3, "fatM": 11.7, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.8, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.2, "mLL": 8.9, "mRL": 8.9, "score": 81, "wk": "周一"}, {"date": "2026-06-29", "weight": 68.1, "bf": 17.8, "musM": 53.0, "musP": 77.8, "proM": 10.9, "proP": 16.0, "watM": 41.5, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.8, "bmr": 1580, "rec": 2291, "ffm": 56.0, "fLA": 0.6, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.3, "mLL": 8.8, "mRL": 8.9, "score": 81, "wk": "周一"}, {"date": "2026-07-03", "weight": 66.95, "bf": 17.4, "musM": 52.4, "musP": 78.3, "proM": 10.8, "proP": 16.1, "watM": 40.9, "watP": 61.1, "bonM": 2.9, "bonP": 4.3, "fatM": 11.6, "skM": 29.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.7, "mRL": 8.7, "score": 81, "wk": "周五"}, {"date": "2026-07-06", "weight": 68.2, "bf": 18.0, "musM": 52.9, "musP": 77.6, "proM": 10.8, "proP": 15.8, "watM": 41.5, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.3, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.7, "fRA": 0.7, "fTr": 6.4, "fLL": 2.0, "fRL": 2.0, "mLA": 2.9, "mRA": 2.9, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周一"}, {"date": "2026-07-11", "weight": 67.2, "bf": 17.1, "musM": 52.7, "musP": 78.4, "proM": 10.8, "proP": 16.1, "watM": 41.3, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.5, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1573, "rec": 2281, "ffm": 55.7, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.1, "mLL": 8.7, "mRL": 8.8, "score": 81, "wk": "周六"}, {"date": "2026-07-18", "weight": 66.65, "bf": 16.8, "musM": 52.5, "musP": 78.8, "proM": 10.7, "proP": 16.1, "watM": 41.1, "watP": 61.7, "bonM": 2.9, "bonP": 4.4, "fatM": 11.2, "skM": 30.0, "vis": 4.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.6, "bmr": 1567, "rec": 2272, "ffm": 55.4, "fLA": 0.6, "fRA": 0.6, "fTr": 5.8, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.7, "score": 81, "wk": "周六"}];
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -300,6 +326,64 @@ const sd=d=>d.slice(5).replace('-','/');
 const tip=document.getElementById('tip');
 const first=DATA[0],last=DATA[DATA.length-1],N=DATA.length;
 let selDay=N-1;
+const refreshIcons=()=>window.lucide?.createIcons();
+
+/* ---------- progressive Liquid Glass ---------- */
+const ua=navigator.userAgent;
+const iosWebKit=/(iPhone|iPad|iPod)/i.test(ua)||(/Macintosh/i.test(ua)&&navigator.maxTouchPoints>1);
+const safariLike=iosWebKit||(/Safari/i.test(ua)&&!/(Chrome|Chromium|Edg|OPR|Android)/i.test(ua));
+if(!safariLike&&CSS.supports?.('backdrop-filter','url("#liquid-refraction") blur(12px)')){
+  document.documentElement.classList.add('liquid-refraction');
+}
+function initLiquidSurfaces(){
+  document.querySelectorAll('.liquid-surface').forEach(surface=>{
+    if(surface.dataset.liquidReady)return;
+    surface.dataset.liquidReady='true';
+    const point=e=>{
+      const r=surface.getBoundingClientRect();
+      const x=Math.max(0,Math.min(100,(e.clientX-r.left)/Math.max(1,r.width)*100));
+      const y=Math.max(0,Math.min(100,(e.clientY-r.top)/Math.max(1,r.height)*100));
+      surface.style.setProperty('--glass-x',`${x.toFixed(1)}%`);
+      surface.style.setProperty('--glass-y',`${y.toFixed(1)}%`);
+    };
+    const settle=()=>{surface.classList.remove('is-energized');surface.style.setProperty('--glass-x','50%');surface.style.setProperty('--glass-y','0%');};
+    surface.addEventListener('pointermove',point,{passive:true});
+    surface.addEventListener('pointerdown',e=>{point(e);surface.classList.add('is-energized');},{passive:true});
+    surface.addEventListener('pointerup',()=>surface.classList.remove('is-energized'),{passive:true});
+    surface.addEventListener('pointercancel',settle,{passive:true});
+    surface.addEventListener('pointerleave',settle,{passive:true});
+  });
+}
+initLiquidSurfaces();
+
+/* ---------- appearance: auto, light, dark ---------- */
+const themeButton=document.getElementById('themeToggle');
+const systemDark=matchMedia('(prefers-color-scheme: dark)');
+const themeOrder=['auto','light','dark'];
+const themeMeta={
+  auto:{label:'跟随系统',icon:'monitor'},
+  light:{label:'浅色',icon:'sun'},
+  dark:{label:'深色',icon:'moon'}
+};
+function applyTheme(mode,{save=true}={}){
+  const dark=mode==='dark'||(mode==='auto'&&systemDark.matches);
+  document.documentElement.dataset.theme=dark?'dark':'light';
+  document.documentElement.dataset.themeMode=mode;
+  if(save)localStorage.setItem('bia-theme',mode);
+  const meta=themeMeta[mode];
+  themeButton.innerHTML=`<i data-lucide="${meta.icon}"></i>`;
+  themeButton.title=`外观：${meta.label}`;
+  themeButton.setAttribute('aria-label',`当前外观：${meta.label}，点击切换`);
+  refreshIcons();
+}
+applyTheme(document.documentElement.dataset.themeMode||'auto',{save:false});
+themeButton.addEventListener('click',()=>{
+  const current=document.documentElement.dataset.themeMode||'auto';
+  applyTheme(themeOrder[(themeOrder.indexOf(current)+1)%themeOrder.length]);
+});
+systemDark.addEventListener?.('change',()=>{
+  if(document.documentElement.dataset.themeMode==='auto')applyTheme('auto',{save:false});
+});
 
 /* ---------- tiny spring (critically damped default, velocity-carrying, re-targetable) ---------- */
 class Spring{
@@ -333,7 +417,7 @@ const M={
  score:{name:'身体得分',unit:'分',dec:0,c:'var(--gold)',good:'up'},
 };
 const arr=k=>DATA.map(d=>d[k]);
-const judge=(k,delta)=>{const m=M[k];if(m.good==='flat')return delta<0?'down':'up';if(Math.abs(delta)<1e-9)return'flat';return (delta<0)===(m.good==='down')?'up':'down';};
+const judge=(k,delta)=>{const m=M[k];if(m.good==='flat'||Math.abs(delta)<1e-9)return'flat';return (delta<0)===(m.good==='down')?'up':'down';};
 
 /* ---------- spring count-up for a number node ---------- */
 function countTo(node,target,dec,unit=''){
@@ -345,16 +429,23 @@ function countTo(node,target,dec,unit=''){
 }
 
 /* ---------- glance + summary + footer ---------- */
-document.getElementById('glance').innerHTML=`<span class="hideS">${last.date}</span><span>体脂 <b>${last.bf}%</b></span>`;
-function blk(l,m,s,sc){return `<div class="card sblk"><div class="l">${l}</div><div class="m tnum">${m}</div>${s?`<div class="s tnum" style="color:${sc||'var(--label-4)'}">${s}</div>`:''}</div>`;}
 const bfDelta=+(last.bf-first.bf).toFixed(1);
+document.getElementById('glance').innerHTML=`<span>${last.date}</span><span>体脂 <b>${last.bf}%</b></span>`;
+document.getElementById('heroMeta').textContent=`${first.date} 至 ${last.date} · ${N} 次测量`;
+document.getElementById('heroBf').textContent=last.bf.toFixed(1);
+document.getElementById('heroChange').innerHTML=`<i data-lucide="${bfDelta<=0?'arrow-down-right':'arrow-up-right'}"></i>${Math.abs(bfDelta).toFixed(1)} 个百分点 · 较首测`;
+function blk(l,m,s,sc){return `<div class="sblk"><div class="l">${l}</div><div class="m tnum">${m}</div>${s?`<div class="s tnum" style="color:${sc||'var(--label-4)'}">${s}</div>`:''}</div>`;}
+const weightDelta=+(last.weight-first.weight).toFixed(2);
+const fatDelta=+(last.fatM-first.fatM).toFixed(1);
+const muscleDelta=+(last.skM-first.skM).toFixed(1);
 document.getElementById('summary').innerHTML=
- blk('时间范围',`${sd(first.date)} – ${sd(last.date)}`,`${N} 次测量`)+
- blk('体脂率',`${first.bf}% → ${last.bf}%`,`${bfDelta>0?'+':''}${bfDelta} 个百分点`,bfDelta<0?'var(--green-t)':'var(--red-t)')+
- blk('骨骼肌量',`${first.skM} → ${last.skM}kg`,`+${(+(last.skM-first.skM).toFixed(1))}kg`,'var(--green-t)')+
- blk('身体类型',`${first.type} → ${last.type}`,last.vis<=4?'内脏脂肪已达健康':'已进入健康区间');
+ blk('最新体重',`${last.weight.toFixed(2)}kg`,`${weightDelta>0?'+':''}${weightDelta.toFixed(2)}kg 较首测`,weightDelta<=0?'var(--green-t)':'var(--label-4)')+
+ blk('最新脂肪量',`${last.fatM.toFixed(1)}kg`,`${fatDelta>0?'+':''}${fatDelta.toFixed(1)}kg 较首测`,fatDelta<=0?'var(--green-t)':'var(--red-t)')+
+ blk('最新骨骼肌量',`${last.skM.toFixed(1)}kg`,`${muscleDelta>0?'+':''}${muscleDelta.toFixed(1)}kg 较首测`,muscleDelta>=0?'var(--green-t)':'var(--red-t)')+
+ blk('身体类型',last.type,`内脏脂肪 ${last.vis.toFixed(0)} 级`,last.vis<=4?'var(--green-t)':'var(--label-4)');
 document.getElementById('footL').textContent=`${N} 次测量 · 33 数据维度`;
 document.getElementById('footR').textContent=`${first.date} → ${last.date}`;
+refreshIcons();
 
 /* ---------- KPI ---------- */
 function spark(k,color){const v=arr(k),w=150,h=30,mn=Math.min(...v),mx=Math.max(...v),p=4;
@@ -378,13 +469,15 @@ const kbox=document.getElementById('kpis');
 /* ============================================================
    Line chart with fixed Y axis + horizontal scroll + spring morph
    ============================================================ */
-const PLOT_H=300,T=20,B=34,PAD_L=14,PAD_R=18,MIN_STEP=27;
+let PLOT_H=innerWidth<=640?260:300;
+const T=20,B=34,PAD_L=14,PAD_R=18;
 let chartCtx={};   // holds current geometry + spring state for #trendChart
 function geom(host,series){
   const unitL=series[0].unit, unitR=(series.find(s=>s.unit!==unitL)||{}).unit, dual=unitR!==undefined;
   const yW=46, ryW=dual?50:0;
   const avail=Math.max(220,(host.getBoundingClientRect().width||700)-yW-ryW);
-  const plotW=Math.max(avail,PAD_L+PAD_R+(N-1)*MIN_STEP), scrolls=plotW>avail+1;
+  const minStep=innerWidth<=640?34:27;
+  const plotW=Math.max(avail,PAD_L+PAD_R+(N-1)*minStep), scrolls=plotW>avail+1;
   const X=i=>PAD_L+i*(plotW-PAD_L-PAD_R)/(N-1);
   const axisOf=s=>s.unit===unitL?0:1;
   const dom=[0,1].map(ax=>{let lo=1e9,hi=-1e9;series.forEach(s=>{if(axisOf(s)===ax)s.v.forEach(x=>{lo=Math.min(lo,x);hi=Math.max(hi,x);});});if(lo===1e9)return null;const p=(hi-lo)*0.22||1;return[lo-p,hi+p];});
@@ -412,9 +505,7 @@ function buildTrend(series,{morph=false}={}){
   const scr=document.createElement('div');scr.className='cscroll';scr.style.marginLeft=g.yW+'px';if(g.dual)scr.style.marginRight=g.ryW+'px';
   const svg=el('svg',{viewBox:`0 0 ${g.plotW} ${PLOT_H}`,width:g.plotW,height:PLOT_H});scr.appendChild(svg);
   box.appendChild(yw);if(g.dual)box.appendChild(rw);box.appendChild(scr);host.appendChild(box);
-  if(g.scrolls){const cue=document.createElement('div');cue.className='scrollcue';
-    cue.innerHTML='<svg class="ic" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/></svg>左右拖动查看完整时间线';host.appendChild(cue);
-    scr.scrollLeft=scr.scrollWidth;}
+  if(g.scrolls)scr.scrollLeft=scr.scrollWidth;
 
   // spring state for primary series (per-point y target in px, computed from a springing left-domain)
   const domL=g.dom[0];
@@ -464,6 +555,11 @@ function buildTrend(series,{morph=false}={}){
   chartCtx.g=g;chartCtx.series=series;chartCtx.paint=paint;
   host._axHint=`左轴 · ${g.unitL||'—'}`+(g.dual?`　右轴 · ${g.unitR||'—'}`:'');
   document.getElementById('axHint').textContent=host._axHint;
+  const selected=DATA[selDay];
+  document.getElementById('trendSelection').innerHTML=
+    `<strong>${sd(selected.date)} ${selected.wk||''}</strong><i></i>`+
+    series.map(s=>`<span style="color:${s.c}">${s.name} ${(+s.v[selDay]).toFixed(M[s.key]?.dec??1)}${s.unit||''}</span>`).join('<i></i>');
+  refreshIcons();
   // run morph loop if animating domain
   if(canMorph){startMorph();}
 }
@@ -485,8 +581,8 @@ const BOARDS={
 };
 let board='core',sel=[...BOARDS.core.def];
 const boardTabs=document.getElementById('boardTabs');
-Object.entries(BOARDS).forEach(([k,b])=>{const btn=document.createElement('button');btn.textContent=b.label;if(k===board)btn.classList.add('on');
- btn.onclick=()=>{board=k;sel=[...b.def];[...boardTabs.children].forEach(x=>x.classList.remove('on'));btn.classList.add('on');renderChips();drawTrend(true);};boardTabs.appendChild(btn);});
+Object.entries(BOARDS).forEach(([k,b],index)=>{const btn=document.createElement('button');btn.textContent=b.label;if(k===board)btn.classList.add('on');
+ btn.onclick=()=>{board=k;sel=[...b.def];boardTabs.style.setProperty('--active-index',index);[...boardTabs.children].forEach(x=>x.classList.remove('on'));btn.classList.add('on');renderChips();drawTrend(true);};boardTabs.appendChild(btn);});
 const distinctUnits=keys=>[...new Set(keys.map(k=>M[k].unit))];
 function renderChips(){const box=document.getElementById('metricChips');box.innerHTML='';
  BOARDS[board].metrics.forEach(k=>{const m=M[k],on=sel.includes(k),blocked=!on && distinctUnits([...sel,k]).length>2;
@@ -523,8 +619,7 @@ function buildSeg(){
   const scr=document.createElement('div');scr.className='cscroll';scr.style.marginLeft=g.yW+'px';
   const svg=el('svg',{viewBox:`0 0 ${g.plotW} ${PLOT_H}`,width:g.plotW,height:PLOT_H});scr.appendChild(svg);
   box.appendChild(yw);box.appendChild(scr);host.appendChild(box);
-  if(g.scrolls){const cue=document.createElement('div');cue.className='scrollcue';
-    cue.innerHTML='<svg class="ic" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/></svg>左右拖动查看完整时间线';host.appendChild(cue);scr.scrollLeft=scr.scrollWidth;}
+  if(g.scrolls)scr.scrollLeft=scr.scrollWidth;
   const dom=g.dom[0];
   for(let q=0;q<=4;q++){const yy=T+q*(PLOT_H-T-B)/4;svg.append(el('line',{x1:0,y1:yy,x2:g.plotW,y2:yy,stroke:'var(--sep)','stroke-width':q===4?1:.7}));
     const val=dom[1]-(q/4)*(dom[1]-dom[0]);yax.append(txt(g.yW-8,yy+3,val.toFixed(1),{anchor:'end',size:10,fill:'var(--label-4)'}));}
@@ -542,8 +637,10 @@ function buildSeg(){
   scr.addEventListener('mouseleave',()=>{tip.style.opacity=0;hl.setAttribute('opacity',0);});
   scr.addEventListener('click',ev=>{selDay=idxAt(ev);syncDay();});
   document.getElementById('segLegend').innerHTML=series.map(s=>`<span><i style="background:${s.c}"></i>${s.name}</span>`).join('');
+  refreshIcons();
 }
-document.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-seg]').forEach(x=>x.classList.remove('on'));b.classList.add('on');segKind=b.dataset.seg;
+const segTabs=[...document.querySelectorAll('[data-seg]')];
+segTabs.forEach((b,index)=>b.onclick=()=>{segTabs.forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('segTabs').style.setProperty('--active-index',index);segKind=b.dataset.seg;
   const host=document.getElementById('segChart').querySelector('.cscroll svg');if(host&&!RM){host.style.opacity=0;setTimeout(buildSeg,140);}else buildSeg();});
 buildSeg();
 
@@ -552,19 +649,28 @@ const dateIndex=new Map(DATA.map((d,i)=>[d.date,i]));
 const pad2=n=>String(n).padStart(2,'0');
 const dayBtn=document.getElementById('dayBtn'),dayBtnLabel=document.getElementById('dayBtnLabel'),calPop=document.getElementById('calPop');
 const dayPrev=document.getElementById('dayPrev'),dayNext=document.getElementById('dayNext');
+const calendarScrim=document.getElementById('calendarScrim');
+const mobileSheet=matchMedia('(max-width: 640px)');
 let viewY,viewM,calOpen=false;
-function reportFile(d){return "#";}
 function syncDay(){renderDay();drawTrend(false);buildSeg();if(calOpen)renderCal();}
 dayPrev.onclick=()=>{if(selDay>0){selDay--;syncDay();}};
 dayNext.onclick=()=>{if(selDay<N-1){selDay++;syncDay();}};
-dayBtn.onclick=e=>{e.stopPropagation();calOpen=!calOpen;if(calOpen){const[y,m]=DATA[selDay].date.split('-').map(Number);viewY=y;viewM=m;renderCal();}calPop.classList.toggle('show',calOpen);};
-document.addEventListener('click',e=>{if(calOpen&&!calPop.contains(e.target)&&!dayBtn.contains(e.target)){calOpen=false;calPop.classList.remove('show');}});
+function setCalendarOpen(open){
+ calOpen=open;calPop.classList.toggle('show',open);dayBtn.setAttribute('aria-expanded',String(open));
+ calendarScrim.classList.toggle('show',open&&mobileSheet.matches);
+ if(!open){calPop.style.transform='';calPop.style.transition='';calendarScrim.style.opacity='';}
+}
+dayBtn.onclick=e=>{e.stopPropagation();if(!calOpen){const[y,m]=DATA[selDay].date.split('-').map(Number);viewY=y;viewM=m;renderCal();}setCalendarOpen(!calOpen);};
+calendarScrim.onclick=()=>setCalendarOpen(false);
+document.addEventListener('click',e=>{if(calOpen&&!calPop.contains(e.target)&&!dayBtn.contains(e.target))setCalendarOpen(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&calOpen){setCalendarOpen(false);dayBtn.focus();}});
+mobileSheet.addEventListener?.('change',()=>calendarScrim.classList.toggle('show',calOpen&&mobileSheet.matches));
 function renderCal(){
  const wd=['一','二','三','四','五','六','日'];
  const firstDow=(new Date(viewY,viewM-1,1).getDay()+6)%7, days=new Date(viewY,viewM,0).getDate();
- let html=`<div class="calhead"><button class="calnav" id="calPrev"><svg class="ic" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>`+
+ let html=`<div class="sheet-handle" id="sheetHandle" aria-hidden="true"></div><div class="calhead"><button class="calnav" id="calPrev" type="button" aria-label="上个月"><i data-lucide="chevron-left"></i></button>`+
    `<span class="m tnum">${viewY}年${viewM}月</span>`+
-   `<button class="calnav" id="calNext"><svg class="ic" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button></div><div class="calgrid">`;
+   `<button class="calnav" id="calNext" type="button" aria-label="下个月"><i data-lucide="chevron-right"></i></button></div><div class="calgrid">`;
  html+=wd.map(w=>`<div class="wd">${w}</div>`).join('');
  for(let i=0;i<firstDow;i++)html+=`<div class="calday empty"></div>`;
  for(let day=1;day<=days;day++){const ds=`${viewY}-${pad2(viewM)}-${pad2(day)}`,has=dateIndex.has(ds),sel2=has&&dateIndex.get(ds)===selDay;
@@ -572,7 +678,16 @@ function renderCal(){
  html+='</div>';calPop.innerHTML=html;
  calPop.querySelector('#calPrev').onclick=ev=>{ev.stopPropagation();viewM--;if(viewM<1){viewM=12;viewY--;}renderCal();};
  calPop.querySelector('#calNext').onclick=ev=>{ev.stopPropagation();viewM++;if(viewM>12){viewM=1;viewY++;}renderCal();};
- calPop.querySelectorAll('.calday.has').forEach(b=>b.onclick=ev=>{ev.stopPropagation();selDay=dateIndex.get(b.dataset.d);calOpen=false;calPop.classList.remove('show');syncDay();});
+ calPop.querySelectorAll('.calday.has').forEach(b=>b.onclick=ev=>{ev.stopPropagation();selDay=dateIndex.get(b.dataset.d);setCalendarOpen(false);syncDay();});
+ bindSheetDrag();refreshIcons();
+}
+function bindSheetDrag(){
+ const handle=calPop.querySelector('#sheetHandle');if(!handle)return;
+ let active=false,startY=0,lastY=0,lastT=0,velocity=0,offset=0;
+ handle.addEventListener('pointerdown',e=>{if(!mobileSheet.matches)return;active=true;startY=lastY=e.clientY;lastT=performance.now();velocity=0;offset=0;handle.setPointerCapture(e.pointerId);calPop.style.transition='none';});
+ handle.addEventListener('pointermove',e=>{if(!active)return;const now=performance.now(),dy=e.clientY-startY,dt=Math.max(1,now-lastT);velocity=(e.clientY-lastY)/dt;offset=dy<0?dy*.18:dy;lastY=e.clientY;lastT=now;calPop.style.transform=`translateY(${offset}px)`;calendarScrim.style.opacity=String(Math.max(0,1-Math.max(0,offset)/260));});
+ const end=e=>{if(!active)return;active=false;handle.releasePointerCapture?.(e.pointerId);const projected=offset+velocity*150;calPop.style.transition='';calendarScrim.style.opacity='';if(projected>96)setCalendarOpen(false);else calPop.style.transform='';};
+ handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
 }
 function renderDay(){const d=DATA[selDay];
  dayBtnLabel.textContent=`${d.date} ${d.wk||''}`;dayPrev.disabled=selDay<=0;dayNext.disabled=selDay>=N-1;
@@ -583,8 +698,7 @@ function renderDay(){const d=DATA[selDay];
  countTo(document.getElementById('scoreNum'),d.score,0);
  const cells=[['体重',d.weight,'kg'],['体脂率',d.bf,'%'],['脂肪量',d.fatM,'kg'],['肌肉量',d.musM,'kg'],['骨骼肌量',d.skM,'kg'],['去脂体重',d.ffm,'kg'],['身体水分',d.watP,'%'],['蛋白质率',d.proP,'%'],['骨盐量',d.bonM,'kg'],['内脏脂肪',d.vis,'级'],['基础代谢',d.bmr,'kcal'],['骨骼肌指数',d.smi,'']];
  document.getElementById('dayGrid').innerHTML=cells.map(([l,v,u])=>`<div class="daycell${l==='内脏脂肪'&&v<=4?' flag':''}"><div class="l">${l}</div><div class="v tnum">${v}<u>${u}</u></div></div>`).join('');
- document.getElementById('dayType').innerHTML=[['日期',`${d.date.slice(5)} ${d.wk||''}`],['身体形态',d.shape],['身体类型',d.type],['身体年龄',d.bage+'岁']].map(([l,v])=>`<span class="pill">${l} · ${v}</span>`).join('');
- document.getElementById('reportLink').href=reportFile(d);}
+ document.getElementById('dayType').innerHTML=[['日期',`${d.date.slice(5)} ${d.wk||''}`],['身体形态',d.shape],['身体类型',d.type],['身体年龄',d.bage+'岁']].map(([l,v])=>`<span class="pill">${l} · ${v}</span>`).join('');}
 renderDay();
 
 /* ---------- KPI count-up + reveal on load (staggered spring) ---------- */
@@ -600,7 +714,21 @@ function revealSpring(node){
 }
 
 /* ---------- responsive redraw (debounced) ---------- */
-let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{buildTrend(seriesFromSel(),{morph:false});buildSeg();},160);});
+/* ---------- section wayfinding + responsive redraw ---------- */
+const navLinks=[...document.querySelectorAll('.mobile-nav a,.section-nav a')];
+const navIds=['overview','trends','segments','daily'];
+const navById=id=>{
+ const index=Math.max(0,navIds.indexOf(id));
+ document.querySelectorAll('.mobile-nav,.section-nav').forEach(nav=>nav.style.setProperty('--active-index',index));
+ navLinks.forEach(a=>a.classList.toggle('current',a.getAttribute('href')===`#${id}`));
+};
+const navObserver=new IntersectionObserver(entries=>{
+ const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+ if(visible)navById(visible.target.id);
+},{rootMargin:'-25% 0px -60% 0px',threshold:[0,.25,.6]});
+navIds.forEach(id=>navObserver.observe(document.getElementById(id)));
+navById('overview');
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{PLOT_H=innerWidth<=640?260:300;buildTrend(seriesFromSel(),{morph:false});buildSeg();},160);});
 </script>
 </body>
 </html>
