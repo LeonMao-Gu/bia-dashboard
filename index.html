@@ -33,12 +33,13 @@
   --shadow-pop:0 18px 50px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
 
-  /* 同心圆角体系：内半径 = 外半径 − 间距（Apple concentric rule） */
-  --r-xl:20px;              /* 容器：顶栏 / 卡片 / 底部导航 / 日历浮层 */
-  --r-lg:14px;              /* 容器内的控件组：分段控件 / 日期选择器 */
-  --r-md:11px;              /* 控件组内的单项：透镜 / 按钮 = --r-lg − 3px 内边距 */
-  --r-sm:8px;               /* 最小元素：chip / 日格 / 单日卡 */
-  --r-xs:5px;               /* 色块 / 徽标 */
+  /* 同心圆角体系：主表面统一，内半径随容器间距递减（Apple concentric rule） */
+  --r-surface:24px;         /* 顶栏 / 卡片 / 底部导航 / 日历浮层 */
+  --r-xl:var(--r-surface);
+  --r-lg:16px;              /* 容器内的控件组：分段控件 / 日期选择器 */
+  --r-md:13px;              /* 控件组内的单项：透镜 / 按钮 = --r-lg − 3px 内边距 */
+  --r-sm:9px;               /* 最小元素：chip / 日格 / 单日卡 */
+  --r-xs:6px;               /* 色块 / 徽标 */
   --lens-inset:3px;
 
   /* 光学：色散（rim 处的色差）与眩光 */
@@ -87,16 +88,15 @@ button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--b
 /* 底层环境光：铺在所有内容之下，让玻璃有东西可折射。
    卡片不透明，故它在页面留白、卡片间隙与 hero 区透出。 */
 .ambient{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;opacity:var(--amb-o)}
-.ambient i{position:absolute;display:block;border-radius:42px;filter:blur(30px) saturate(112%);will-change:transform}
-.ambient i:nth-child(1){left:-8%;top:3%;width:clamp(220px,34vw,430px);height:clamp(130px,19vw,240px);background:linear-gradient(132deg,var(--amb-1),var(--amb-4));transform:rotate(-9deg)}
-.ambient i:nth-child(2){right:-10%;top:27%;width:clamp(200px,30vw,380px);height:clamp(150px,22vw,280px);background:linear-gradient(146deg,var(--amb-3),var(--amb-2));transform:rotate(12deg)}
-.ambient i:nth-child(3){left:8%;top:56%;width:clamp(180px,26vw,330px);height:clamp(120px,17vw,210px);background:linear-gradient(118deg,var(--amb-2),var(--amb-4));transform:rotate(7deg)}
-.ambient i:nth-child(4){right:5%;top:80%;width:clamp(210px,32vw,400px);height:clamp(130px,18vw,230px);background:linear-gradient(138deg,var(--amb-1),var(--amb-3));transform:rotate(-11deg)}
-.ambient{animation:ambientDrift 64s ease-in-out infinite alternate;will-change:transform}
+.ambient i{position:absolute;display:block;border-radius:42px;filter:blur(30px) saturate(112%);animation:ambientDrift 64s ease-in-out infinite alternate;will-change:transform}
+.ambient i:nth-child(1){--rot:-9deg;left:-8%;top:3%;width:clamp(220px,34vw,430px);height:clamp(130px,19vw,240px);background:linear-gradient(132deg,var(--amb-1),var(--amb-4))}
+.ambient i:nth-child(2){--rot:12deg;right:-10%;top:27%;width:clamp(200px,30vw,380px);height:clamp(150px,22vw,280px);background:linear-gradient(146deg,var(--amb-3),var(--amb-2));animation-delay:-17s}
+.ambient i:nth-child(3){--rot:7deg;left:8%;top:56%;width:clamp(180px,26vw,330px);height:clamp(120px,17vw,210px);background:linear-gradient(118deg,var(--amb-2),var(--amb-4));animation-delay:-31s}
+.ambient i:nth-child(4){--rot:-11deg;right:5%;top:80%;width:clamp(210px,32vw,400px);height:clamp(130px,18vw,230px);background:linear-gradient(138deg,var(--amb-1),var(--amb-3));animation-delay:-43s}
 @keyframes ambientDrift{
-  0%{transform:translate3d(0,0,0) scale(1)}
-  50%{transform:translate3d(1.6%,-1.2%,0) scale(1.05)}
-  100%{transform:translate3d(-1.4%,1.6%,0) scale(1.02)}}
+  0%{transform:translate3d(0,0,0) rotate(var(--rot))}
+  50%{transform:translate3d(10px,-8px,0) rotate(calc(var(--rot) + 2deg))}
+  100%{transform:translate3d(-8px,10px,0) rotate(calc(var(--rot) - 1deg))}}
 
 /* Liquid Glass is reserved for navigation, controls and transient layers. */
 .liquid-filter-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
