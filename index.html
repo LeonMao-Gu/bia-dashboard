@@ -32,6 +32,25 @@
   --shadow-card:0 1px 2px rgba(0,0,0,.03),0 10px 28px rgba(0,0,0,.06);
   --shadow-pop:0 18px 50px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+
+  /* 同心圆角体系：内半径 = 外半径 − 间距（Apple concentric rule） */
+  --r-xl:20px;              /* 容器：顶栏 / 卡片 / 底部导航 / 日历浮层 */
+  --r-lg:14px;              /* 容器内的控件组：分段控件 / 日期选择器 */
+  --r-md:11px;              /* 控件组内的单项：透镜 / 按钮 = --r-lg − 3px 内边距 */
+  --r-sm:8px;               /* 最小元素：chip / 日格 / 单日卡 */
+  --r-xs:5px;               /* 色块 / 徽标 */
+  --lens-inset:3px;
+
+  /* 光学：色散（rim 处的色差）与眩光 */
+  --disp-c:rgba(120,214,255,1);
+  --disp-m:rgba(255,150,214,1);
+  /* 底层流动背景：压得很淡，只为给玻璃一个可折射的活底 */
+  --amb-1:rgba(120,132,214,.16);
+  --amb-2:rgba(64,180,150,.15);
+  --amb-3:rgba(226,146,96,.12);
+  --amb-o:1;
+  --glass-glare:rgba(255,255,255,.30);
+  --spring-ease:cubic-bezier(.22,.86,.24,1);
 }
 html[data-theme="dark"]{
   color-scheme:dark;
@@ -47,40 +66,89 @@ html[data-theme="dark"]{
   --slate:#93a2b5;--plum:#bd8bd2;--moss:#abbc54;--brown:#c38b5d;
   --shadow-card:0 1px 2px rgba(0,0,0,.35),0 14px 34px rgba(0,0,0,.24);
   --shadow-pop:0 22px 60px rgba(0,0,0,.58),0 2px 10px rgba(0,0,0,.35);
+  --disp-c:rgba(96,196,255,1);
+  --disp-m:rgba(226,128,196,1);
+  --glass-glare:rgba(255,255,255,.10);
+  --amb-1:rgba(128,140,224,.20);
+  --amb-2:rgba(60,190,158,.17);
+  --amb-3:rgba(230,150,100,.14);
+  --amb-o:.9;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:86px;-webkit-text-size-adjust:100%}
-body{min-height:100vh;background:var(--canvas);color:var(--label);font-family:var(--sans);font-size:16px;line-height:1.5;letter-spacing:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{min-height:100vh;background:var(--canvas);isolation:isolate;color:var(--label);font-family:var(--sans);font-size:16px;line-height:1.5;letter-spacing:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button,a{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 35%,transparent);outline-offset:2px}
 .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 .page{max-width:1180px;margin:0 auto;padding:0 24px calc(92px + env(safe-area-inset-bottom))}
 
+/* 底层环境光：铺在所有内容之下，让玻璃有东西可折射。
+   卡片不透明，故它在页面留白、卡片间隙与 hero 区透出。 */
+.ambient{position:fixed;inset:-18%;z-index:-1;pointer-events:none;opacity:var(--amb-o);
+  background:
+    radial-gradient(38vmax 30vmax at 18% 22%,var(--amb-1),transparent 62%),
+    radial-gradient(42vmax 34vmax at 82% 68%,var(--amb-2),transparent 64%),
+    radial-gradient(32vmax 28vmax at 62% 8%,var(--amb-3),transparent 60%);
+  filter:blur(28px) saturate(118%);
+  animation:ambientDrift 64s ease-in-out infinite alternate;will-change:transform}
+@keyframes ambientDrift{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(1.6%,-1.2%,0) scale(1.05)}
+  100%{transform:translate3d(-1.4%,1.6%,0) scale(1.02)}}
+
 /* Liquid Glass is reserved for navigation, controls and transient layers. */
 .liquid-filter-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
-.liquid-surface{--glass-x:50%;--glass-y:0%;--glass-blur:24px;position:relative;isolation:isolate;background:radial-gradient(150px circle at var(--glass-x) var(--glass-y),var(--glass-glow),transparent 68%),var(--glass);border:1px solid var(--glass-stroke);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(255,255,255,.06),var(--glass-shadow);backdrop-filter:blur(var(--glass-blur)) saturate(185%) contrast(1.03);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(185%) contrast(1.03);transition:box-shadow .22s ease,background .22s ease}
-.liquid-surface::before{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;padding:1px;pointer-events:none;background:linear-gradient(135deg,var(--glass-rim),transparent 28%,transparent 68%,color-mix(in srgb,var(--glass-rim) 42%,transparent));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.liquid-surface{--glass-x:50%;--glass-y:0%;--glass-blur:24px;--glare-a:104deg;--glare-p:44%;position:relative;isolation:isolate;
+  background:
+    linear-gradient(var(--glare-a),transparent calc(var(--glare-p) - 13%),var(--glass-glare) var(--glare-p),transparent calc(var(--glare-p) + 13%)),
+    radial-gradient(190px circle at var(--glass-x) var(--glass-y),var(--glass-glow),transparent 70%),
+    var(--glass);
+  border:1px solid var(--glass-stroke);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(255,255,255,.06),var(--glass-shadow);
+  backdrop-filter:blur(var(--glass-blur)) saturate(185%) contrast(1.03);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(185%) contrast(1.03);
+  transition:box-shadow .28s var(--spring-ease),background .28s ease}
+/* 菲涅尔边缘反射：亮度随周向角变化，掠射角最亮；两处掺入互补色做色散 */
+.liquid-surface::before{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;padding:1.2px;pointer-events:none;
+  background:conic-gradient(from 202deg at 50% 50%,
+    color-mix(in srgb,var(--glass-rim) 10%,transparent) 0deg,
+    var(--glass-rim) 52deg,
+    color-mix(in srgb,var(--disp-c) 34%,transparent) 96deg,
+    color-mix(in srgb,var(--glass-rim) 18%,transparent) 140deg,
+    color-mix(in srgb,var(--glass-rim) 8%,transparent) 196deg,
+    color-mix(in srgb,var(--glass-rim) 86%,transparent) 250deg,
+    color-mix(in srgb,var(--disp-m) 30%,transparent) 296deg,
+    color-mix(in srgb,var(--glass-rim) 10%,transparent) 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude}
 .liquid-surface>*{position:relative;z-index:1}
 .liquid-surface.is-energized{box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(255,255,255,.1),0 13px 38px rgba(0,0,0,.16),0 2px 8px rgba(0,0,0,.08)}
-html.liquid-refraction .liquid-surface{backdrop-filter:url(#liquid-refraction) blur(var(--glass-blur)) saturate(190%) contrast(1.04);-webkit-backdrop-filter:url(#liquid-refraction) blur(var(--glass-blur)) saturate(190%) contrast(1.04)}
+.liquid-surface.is-energized::before{filter:brightness(1.14) saturate(1.2)}
+/* 折射滤镜由 JS 按元素尺寸逐个注入到 backdrop-filter 内联样式 */
 
 /* Floating navigation material */
 .topbar{position:sticky;top:0;z-index:40;height:72px;padding-top:max(8px,env(safe-area-inset-top));background:transparent;pointer-events:none}
-.tbin{height:54px;width:calc(100% - 24px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;max-width:1156px;margin:0 auto;padding:0 14px;border-radius:18px;pointer-events:auto;--glass-blur:28px}
+.tbin{height:54px;width:calc(100% - 24px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;max-width:1156px;margin:0 auto;padding:0 14px;border-radius:var(--r-xl);pointer-events:auto;--glass-blur:28px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--label);text-decoration:none;min-width:0}
-.brand-mark{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:var(--label);color:var(--surface)}
+.brand-mark{width:24px;height:24px;border-radius:var(--r-xs);display:grid;place-items:center;background:var(--label);color:var(--surface)}
 .brand-mark svg{width:14px;height:14px}
 .brand-copy{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
 .brand-copy b{font-size:15px;font-weight:650}.brand-copy span{font-size:11px;color:var(--label-4)}
-.section-nav{--items:4;--active-index:0;position:relative;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:3px;background:color-mix(in srgb,var(--surface-2) 64%,transparent);border:1px solid color-mix(in srgb,var(--glass-stroke) 65%,transparent);border-radius:11px;overflow:hidden}
-.section-nav::after,.segmented::after{content:"";position:absolute;z-index:0;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--items));border:1px solid var(--glass-lens-stroke);border-radius:8px;background:var(--glass-lens);box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 1px 4px rgba(0,0,0,.09);transform:translateX(calc(var(--active-index)*100%));transition:transform .38s cubic-bezier(.2,.82,.2,1),background .2s ease}
-.section-nav a{position:relative;z-index:1;min-height:32px;padding:6px 13px;border-radius:8px;color:var(--label-3);text-decoration:none;font-size:12.5px;font-weight:560;display:flex;align-items:center;justify-content:center;transition:color .18s,transform .1s}
+.section-nav{--items:4;--active-index:0;position:relative;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:var(--lens-inset);background:color-mix(in srgb,var(--surface-2) 64%,transparent);border:1px solid color-mix(in srgb,var(--glass-stroke) 65%,transparent);border-radius:var(--r-lg);overflow:hidden}
+/* 透镜由 JS 实测激活项的位置与尺寸驱动（各项宽度不等，等分假设会错位） */
+.section-nav::after,.segmented::after,.mobile-nav::after{content:"";position:absolute;z-index:0;top:0;left:0;
+  width:var(--lens-w,0px);height:var(--lens-h,0px);
+  transform:translate3d(var(--lens-x,0px),var(--lens-y,0px),0);
+  border:1px solid var(--glass-lens-stroke);border-radius:var(--r-md);background:var(--glass-lens);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 1px 4px rgba(0,0,0,.09);
+  opacity:var(--lens-o,0);
+  transition:transform .44s var(--spring-ease),width .44s var(--spring-ease),height .2s ease,opacity .2s ease,background .2s ease}
+.section-nav a{position:relative;z-index:1;min-height:32px;padding:6px 13px;border-radius:var(--r-md);color:var(--label-3);text-decoration:none;font-size:12.5px;font-weight:560;display:flex;align-items:center;justify-content:center;transition:color .18s,transform .1s}
 .section-nav a:hover,.section-nav a.current{color:var(--label)}
 .section-nav a:active{transform:scale(.95)}
 .top-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px}
 .glance{font-size:12px;color:var(--label-3);white-space:nowrap}
 .glance b{color:var(--fat);font-weight:650}
-.icon-button{width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--label-2);display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .1s}
+.icon-button{width:36px;height:36px;border:0;border-radius:var(--r-md);background:transparent;color:var(--label-2);display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .1s}
 .icon-button:hover{background:var(--surface-2)}.icon-button:active{transform:scale(.9)}
 .icon-button svg{width:18px;height:18px;stroke-width:1.8}
 
@@ -94,7 +162,7 @@ h1{font-size:46px;font-weight:720;line-height:1.08;letter-spacing:0;margin-top:8
 .hero-current .label{font-size:12px;color:var(--label-3);font-weight:560}
 .hero-value{display:flex;align-items:baseline;justify-content:flex-end;line-height:1;margin-top:7px}
 .hero-value b{font-size:66px;font-weight:720;letter-spacing:0}.hero-value span{font-size:21px;font-weight:600;color:var(--label-3);margin-left:4px}
-.hero-change{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 9px;border-radius:6px;background:color-mix(in srgb,var(--green) 11%,transparent);color:var(--green-t);font-size:12px;font-weight:650}
+.hero-change{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 9px;border-radius:var(--r-xs);background:color-mix(in srgb,var(--green) 11%,transparent);color:var(--green-t);font-size:12px;font-weight:650}
 .hero-change svg{width:13px;height:13px}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);margin-top:42px;border-top:1px solid var(--sep)}
 .sblk{min-width:0;padding:20px 22px 2px 0}
@@ -108,13 +176,13 @@ h1{font-size:46px;font-weight:720;line-height:1.08;letter-spacing:0;margin-top:8
 .sec{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}
 .sec .e{font-size:11px;font-weight:650;color:var(--label-4);margin-bottom:4px}
 .sec h2{font-size:25px;font-weight:690;line-height:1.2;letter-spacing:0}
-.card{background:var(--surface);border:1px solid var(--sep);border-radius:8px;box-shadow:var(--shadow-card)}
+.card{background:var(--surface);border:1px solid var(--sep);border-radius:var(--r-xl);box-shadow:var(--shadow-card)}
 .pad{padding:22px}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .stat{padding:18px;min-height:174px;position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s,box-shadow .18s}
 .stat:hover{transform:translateY(-2px);border-color:var(--sep-strong);box-shadow:0 14px 34px rgba(0,0,0,.09)}
 .stat .lab{font-size:12.5px;font-weight:570;color:var(--label-3);display:flex;align-items:center;gap:7px}
-.stat .lab .sw{width:7px;height:7px;border-radius:2px}
+.stat .lab .sw{width:7px;height:7px;border-radius:2.5px}
 .stat .val{font-size:32px;font-weight:690;margin-top:14px;line-height:1}
 .stat .val u{font-size:13px;font-weight:540;color:var(--label-3);text-decoration:none;margin-left:3px}
 .stat .delta{font-size:12px;font-weight:630;margin-top:7px}
@@ -122,14 +190,14 @@ h1{font-size:46px;font-weight:720;line-height:1.08;letter-spacing:0;margin-top:8
 .stat .spark{margin-top:15px;height:30px}.stat .rng{font-size:10.5px;color:var(--label-4);margin-top:8px}
 
 /* Compact controls */
-.segmented{--items:4;--active-index:0;position:relative;display:inline-grid;grid-template-columns:repeat(var(--items),max-content);align-items:center;background:color-mix(in srgb,var(--surface-2) 72%,transparent);border:1px solid color-mix(in srgb,var(--glass-stroke) 72%,transparent);border-radius:11px;padding:3px;overflow:hidden}
-.segmented button{position:relative;z-index:1;min-height:34px;font-size:12.5px;font-weight:560;padding:7px 13px;border:0;background:transparent;color:var(--label-3);border-radius:8px;cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,color .18s}
+.segmented{--items:4;--active-index:0;position:relative;display:inline-grid;grid-template-columns:repeat(var(--items),max-content);align-items:center;background:color-mix(in srgb,var(--surface-2) 72%,transparent);border:1px solid color-mix(in srgb,var(--glass-stroke) 72%,transparent);border-radius:var(--r-lg);padding:var(--lens-inset);overflow:hidden}
+.segmented button{position:relative;z-index:1;min-height:34px;font-size:12.5px;font-weight:560;padding:7px 13px;border:0;background:transparent;color:var(--label-3);border-radius:var(--r-md);cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s,color .18s}
 .segmented button.on{background:transparent;color:var(--label);box-shadow:none;font-weight:650}
 .segmented button:active{transform:scale(.94)}
 .segmented svg{width:15px;height:15px}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
-.chip{min-height:34px;font-size:12.5px;font-weight:570;padding:7px 11px;border-radius:7px;border:1px solid transparent;background:var(--surface-2);color:var(--label-2);cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:transform .1s,background .18s,color .18s,border-color .18s}
-.chip .sw{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.52}.chip .u{opacity:.55;font-size:10.5px}
+.chip{min-height:34px;font-size:12.5px;font-weight:570;padding:7px 11px;border-radius:var(--r-sm);border:1px solid transparent;background:var(--surface-2);color:var(--label-2);cursor:pointer;display:inline-flex;align-items:center;gap:7px;line-height:1;transition:transform .1s,background .18s,color .18s,border-color .18s}
+.chip .sw{width:7px;height:7px;border-radius:2.5px;background:currentColor;opacity:.52}.chip .u{opacity:.55;font-size:10.5px}
 .chip:hover{border-color:var(--sep-strong)}.chip:active{transform:scale(.94)}
 .chip.on{color:#fff}.chip.on .sw{opacity:1;background:#fff}.chip:disabled{opacity:.35;cursor:not-allowed}
 
@@ -146,31 +214,31 @@ h1{font-size:46px;font-weight:720;line-height:1.08;letter-spacing:0;margin-top:8
 .cscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;cursor:crosshair;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 8px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 8px),transparent)}
 .cscroll svg{display:block;overflow:visible;transition:opacity .22s ease}.cscroll::-webkit-scrollbar{height:6px}.cscroll::-webkit-scrollbar-thumb{background:var(--sep-strong);border-radius:3px}.cscroll::-webkit-scrollbar-track{background:transparent}
 .scrollcue{font-size:10.5px;color:var(--label-4);display:flex;align-items:center;gap:5px;margin-top:6px}.scrollcue svg{width:13px;height:13px}
-.tip{position:fixed;pointer-events:none;color:var(--label);font-size:12px;padding:10px 12px;border-radius:8px;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:70;font-weight:520;--glass-blur:22px}.tip b{font-weight:680}
+.tip{position:fixed;pointer-events:none;color:var(--label);font-size:12px;padding:10px 12px;border-radius:var(--r-sm);font-variant-numeric:tabular-nums;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:70;font-weight:520;--glass-blur:22px}.tip b{font-weight:680}
 .leg{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px}.leg span{font-size:12px;color:var(--label-3);display:flex;align-items:center;gap:7px;font-weight:530}.leg i{width:14px;height:3px;border-radius:2px;display:inline-block}
 
 /* Daily inspection */
-.daypick{position:relative;display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--glass-stroke);border-radius:12px;background:var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 4px 14px rgba(0,0,0,.07);backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%)}
+.daypick{position:relative;display:flex;align-items:center;gap:2px;padding:var(--lens-inset);border:1px solid var(--glass-stroke);border-radius:var(--r-lg);background:var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 4px 14px rgba(0,0,0,.07);backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%)}
 .daynav,.daybtn{min-height:38px;border:0;background:transparent;color:var(--label);cursor:pointer;transition:transform .1s,background .18s}
-.daynav{width:38px;border-radius:9px;display:grid;place-items:center;color:var(--label-2)}
+.daynav{width:38px;border-radius:var(--r-md);display:grid;place-items:center;color:var(--label-2)}
 .daynav:hover:not(:disabled),.daybtn:hover{background:var(--glass-lens)}
 .daynav:active:not(:disabled){transform:scale(.9)}.daynav:disabled{opacity:.3;cursor:not-allowed}
-.daybtn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:590;padding:8px 12px;border-radius:9px;font-variant-numeric:tabular-nums;border-left:1px solid var(--sep);border-right:1px solid var(--sep)}.daybtn:active{transform:scale(.96)}
+.daybtn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:590;padding:8px 12px;border-radius:var(--r-md);font-variant-numeric:tabular-nums;border-left:1px solid var(--sep);border-right:1px solid var(--sep)}.daybtn:active{transform:scale(.96)}
 .daybtn svg,.daynav svg,.calnav svg{width:16px;height:16px}.daybtn .chev{width:12px;height:12px;color:var(--label-4)}
 .calendar-scrim{position:fixed;inset:0;z-index:48;background:rgba(0,0,0,.26);opacity:0;pointer-events:none;transition:opacity .2s}
 .calendar-scrim.show{opacity:1;pointer-events:auto}
-.calpop{position:absolute;top:calc(100% + 10px);right:0;width:292px;z-index:50;padding:15px;border-radius:8px;transform-origin:top right;opacity:0;transform:scale(.94) translateY(-5px);pointer-events:none;filter:blur(3px);transition:opacity .2s,transform .28s cubic-bezier(.2,.8,.2,1),filter .2s;--glass-blur:30px}
+.calpop{position:absolute;top:calc(100% + 10px);right:0;width:292px;z-index:50;padding:15px;border-radius:var(--r-xl);transform-origin:top right;opacity:0;transform:scale(.94) translateY(-5px);pointer-events:none;filter:blur(3px);transition:opacity .2s,transform .28s cubic-bezier(.2,.8,.2,1),filter .2s;--glass-blur:30px}
 .calpop.show{opacity:1;transform:none;pointer-events:auto;filter:blur(0)}
 .sheet-handle{display:none}.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.calhead .m{font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
-.calnav{width:36px;height:36px;border-radius:7px;border:0;background:var(--surface-2);color:var(--label-2);cursor:pointer;display:grid;place-items:center;transition:transform .1s,background .18s}.calnav:hover{background:color-mix(in srgb,var(--surface-2) 70%,var(--label) 8%)}.calnav:active{transform:scale(.9)}
+.calnav{width:36px;height:36px;border-radius:var(--r-sm);border:0;background:var(--surface-2);color:var(--label-2);cursor:pointer;display:grid;place-items:center;transition:transform .1s,background .18s}.calnav:hover{background:color-mix(in srgb,var(--surface-2) 70%,var(--label) 8%)}.calnav:active{transform:scale(.9)}
 .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.calgrid .wd{font-size:10.5px;color:var(--label-4);text-align:center;height:24px;display:grid;place-items:center;font-weight:550}
-.calday{aspect-ratio:1;border:0;background:transparent;border-radius:7px;font-size:12.5px;color:var(--label-3);cursor:default;font-variant-numeric:tabular-nums;display:grid;place-items:center;position:relative;transition:transform .1s,background .18s}.calday.has{color:var(--label);cursor:pointer;font-weight:580}.calday.has:hover{background:var(--surface-2)}.calday.has:active{transform:scale(.86)}.calday.has::after{content:"";position:absolute;bottom:4px;width:3px;height:3px;border-radius:50%;background:var(--blue)}.calday.sel{background:var(--blue);color:#fff}.calday.sel::after{background:#fff}.calday.empty{visibility:hidden}
+.calday{aspect-ratio:1;border:0;background:transparent;border-radius:var(--r-sm);font-size:12.5px;color:var(--label-3);cursor:default;font-variant-numeric:tabular-nums;display:grid;place-items:center;position:relative;transition:transform .1s,background .18s}.calday.has{color:var(--label);cursor:pointer;font-weight:580}.calday.has:hover{background:var(--surface-2)}.calday.has:active{transform:scale(.86)}.calday.has::after{content:"";position:absolute;bottom:4px;width:3px;height:3px;border-radius:50%;background:var(--blue)}.calday.sel{background:var(--blue);color:#fff}.calday.sel::after{background:#fff}.calday.empty{visibility:hidden}
 .dayrow{display:grid;grid-template-columns:180px minmax(0,1fr);gap:28px;align-items:start}
 .dayside{display:flex;flex-direction:column;align-items:center;gap:17px;padding:4px 0}
 .ring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--gold) calc(var(--a)*1deg),var(--surface-2) 0)}
 .ring i{width:88px;height:88px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-style:normal;box-shadow:inset 0 0 0 1px var(--sep)}.ring b{font-size:34px;font-weight:720}
-.daytype{display:flex;flex-direction:column;gap:6px;align-items:center}.pill{font-size:11.5px;color:var(--label-2);background:var(--surface-2);padding:5px 9px;border-radius:6px;white-space:nowrap;font-weight:530}
-.daygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.daycell{min-height:77px;background:var(--surface-2);border:1px solid transparent;border-radius:7px;padding:11px 12px;transition:transform .15s,border-color .18s}.daycell:hover{border-color:var(--sep-strong);transform:translateY(-1px)}.daycell .l{font-size:11px;color:var(--label-3);font-weight:520}.daycell .v{font-size:19px;font-weight:650;margin-top:4px}.daycell .v u{font-size:11.5px;font-weight:520;color:var(--label-3);text-decoration:none;margin-left:2px}.daycell.flag{background:color-mix(in srgb,var(--muscle) 12%,var(--surface))}
+.daytype{display:flex;flex-direction:column;gap:6px;align-items:center}.pill{font-size:11.5px;color:var(--label-2);background:var(--surface-2);padding:5px 9px;border-radius:var(--r-xs);white-space:nowrap;font-weight:530}
+.daygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.daycell{min-height:77px;background:var(--surface-2);border:1px solid transparent;border-radius:var(--r-sm);padding:11px 12px;transition:transform .15s,border-color .18s}.daycell:hover{border-color:var(--sep-strong);transform:translateY(-1px)}.daycell .l{font-size:11px;color:var(--label-3);font-weight:520}.daycell .v{font-size:19px;font-weight:650;margin-top:4px}.daycell .v u{font-size:11.5px;font-weight:520;color:var(--label-3);text-decoration:none;margin-left:2px}.daycell.flag{background:color-mix(in srgb,var(--muscle) 12%,var(--surface))}
 
 footer{margin-top:34px;padding-top:16px;font-size:11.5px;color:var(--label-4);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 #segTabs{--items:2}.mobile-nav{--items:4;--active-index:0;display:none}.mobile-nav a.current{color:var(--label)}.reveal{opacity:0}.reveal.in{opacity:1}
@@ -183,7 +251,7 @@ footer{margin-top:34px;padding-top:16px;font-size:11.5px;color:var(--label-4);di
 @media(max-width:720px){.tbin{grid-template-columns:1fr auto}.section-nav{display:none}}
 @media(max-width:640px){
   html{scroll-padding-top:76px}.page{padding:0 16px calc(112px + env(safe-area-inset-bottom))}.topbar{height:64px;padding-top:max(6px,env(safe-area-inset-top))}
-  .tbin{width:calc(100% - 20px);height:50px;padding:0 10px;border-radius:18px}.brand-copy span{display:none}.brand-mark{width:22px;height:22px}.icon-button{width:38px;height:38px}
+  .tbin{width:calc(100% - 20px);height:50px;padding:0 10px;border-radius:var(--r-xl)}.brand-copy span{display:none}.brand-mark{width:22px;height:22px}.icon-button{width:38px;height:38px}
   .hero{padding:28px 0 30px}.hero-head{grid-template-columns:1fr;gap:24px}.eyebrow{font-size:11.5px}h1{font-size:34px;margin-top:5px}.hero-meta{font-size:12.5px;margin-top:9px}
   .hero-current{text-align:left;min-width:0}.hero-value{justify-content:flex-start}.hero-value b{font-size:60px}.hero-value span{font-size:18px}.hero-current .label{font-size:11.5px}
   .summary{grid-template-columns:repeat(2,1fr);margin-top:28px}.sblk{padding:14px 12px 13px 0;border-bottom:1px solid var(--sep)}.sblk+.sblk{padding-left:12px}.sblk:nth-child(3){border-left:0;padding-left:0}.sblk .m{font-size:17px}.sblk .s{font-size:11px}
@@ -192,30 +260,26 @@ footer{margin-top:34px;padding-top:16px;font-size:11.5px;color:var(--label-4);di
   .segmented{max-width:100%;overflow-x:auto;scrollbar-width:none}.segmented::-webkit-scrollbar{display:none}.segmented button{min-width:max-content;min-height:38px;padding:8px 12px}
   .chart-shell{width:calc(100% + 32px);margin-left:-16px;border-left:0;border-right:0;border-radius:0;padding:16px 16px 14px;box-shadow:none}.chips{flex-wrap:nowrap;overflow-x:auto;margin-right:-16px;padding-right:16px;scrollbar-width:none;scroll-snap-type:x proximity}.chips::-webkit-scrollbar{display:none}.chip{min-width:max-content;min-height:38px;scroll-snap-align:start}.chart-toolbar{align-items:flex-start;flex-direction:column;gap:3px}.chart-selection{font-size:11.5px}.axhint{font-size:10.5px}.cscroll{cursor:default}.tip{display:none}
   .daypick{width:100%;backdrop-filter:none;-webkit-backdrop-filter:none}.daybtn{flex:1;justify-content:center;min-width:0;min-height:44px}.daynav{width:44px;min-width:44px;height:44px}.dayrow{gap:18px}.dayside{display:grid;grid-template-columns:92px 1fr;gap:14px}.ring{width:88px;height:88px}.ring i{width:68px;height:68px}.ring b{font-size:28px}.daytype{gap:5px}.pill{font-size:10.5px}.daygrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.daycell{min-height:72px;padding:10px}.daycell .v{font-size:18px}
-  .calendar-scrim{display:block}.calpop{position:fixed;top:auto;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;padding:10px 16px 18px;border-radius:8px;transform-origin:bottom center;transform:translateY(24px) scale(.98);filter:blur(3px);transition:opacity .2s,transform .34s cubic-bezier(.2,.8,.2,1),filter .2s}.calpop.show{transform:none}.sheet-handle{height:22px;display:grid;place-items:center;cursor:grab;touch-action:none}.sheet-handle::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--sep-strong)}.calday{min-height:39px;aspect-ratio:auto}
-  .mobile-nav{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:38;display:grid;grid-template-columns:repeat(4,1fr);padding:5px;border-radius:18px;--glass-blur:28px}
-  .mobile-nav::after{content:"";position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/4);border:1px solid var(--glass-lens-stroke);border-radius:13px;background:var(--glass-lens);box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 1px 5px rgba(0,0,0,.1);transform:translateX(calc(var(--active-index)*100%));transition:transform .38s cubic-bezier(.2,.82,.2,1)}
-  .mobile-nav a{position:relative;z-index:1;min-height:48px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--label-3);font-size:9.5px;font-weight:560;text-decoration:none;transition:color .18s,transform .1s}.mobile-nav a:active{transform:scale(.92);color:var(--label)}.mobile-nav svg{width:18px;height:18px;stroke-width:1.8}
+  .calendar-scrim{display:block}.calpop{position:fixed;top:auto;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:auto;padding:10px 16px 18px;border-radius:var(--r-xl);transform-origin:bottom center;transform:translateY(24px) scale(.98);filter:blur(3px);transition:opacity .2s,transform .34s cubic-bezier(.2,.8,.2,1),filter .2s}.calpop.show{transform:none}.sheet-handle{height:22px;display:grid;place-items:center;cursor:grab;touch-action:none}.sheet-handle::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--sep-strong)}.calday{min-height:39px;aspect-ratio:auto}
+  .mobile-nav{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:38;display:grid;grid-template-columns:repeat(4,1fr);padding:5px;border-radius:var(--r-xl);--lens-inset:5px;--glass-blur:28px}
+  .mobile-nav a{position:relative;z-index:1;min-height:48px;border-radius:var(--r-md);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--label-3);font-size:9.5px;font-weight:560;text-decoration:none;transition:color .18s,transform .1s}.mobile-nav a:active{transform:scale(.92);color:var(--label)}.mobile-nav svg{width:18px;height:18px;stroke-width:1.8}
   footer{padding-bottom:8px}
 }
 @media(max-width:370px){.page{padding-left:12px;padding-right:12px}.chart-shell{width:calc(100% + 24px);margin-left:-12px;padding-left:12px;padding-right:12px}.stat{min-height:150px;padding:12px}.stat .val{font-size:26px}.sblk{padding-right:8px}.sblk+.sblk{padding-left:8px}.sblk:nth-child(3){padding-left:0}.sblk .m{font-size:16px}}
 
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition-duration:.001ms!important}.cscroll svg{transition:opacity .15s ease}.calpop{filter:none!important}}
-@media(prefers-reduced-transparency:reduce){.liquid-surface,.daypick,html.liquid-refraction .liquid-surface{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}.liquid-surface::before{display:none}.yaxis{background:var(--surface)}.raxis{background:var(--surface)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition-duration:.001ms!important}.ambient{animation:none}.cscroll svg{transition:opacity .15s ease}.calpop{filter:none!important}}
+@media(prefers-reduced-transparency:reduce){.ambient{display:none}.liquid-surface,.daypick,html.liquid-refraction .liquid-surface{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}.liquid-surface::before{display:none}.yaxis{background:var(--surface)}.raxis{background:var(--surface)}}
 @media(prefers-contrast:more){:root{--sep:rgba(60,60,67,.48);--label-3:#454548}.card,.chip,.segmented,.daynav,.daybtn{border-color:var(--sep-strong)}}
 </style>
 </head>
 
 <body>
 <svg class="liquid-filter-defs" aria-hidden="true" focusable="false">
-  <defs>
-    <filter id="liquid-refraction" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.009 0.013" numOctaves="1" seed="17" result="noise"/>
-      <feGaussianBlur in="noise" stdDeviation="1.2" result="softNoise"/>
-      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
+  <defs id="lensDefs">
+    <!-- 物理透镜折射滤镜由 JS 按每个玻璃面的实际尺寸生成并注入此处 -->
   </defs>
 </svg>
+<div class="ambient" aria-hidden="true"></div>
 <div class="topbar" id="topbar">
   <div class="tbin liquid-surface">
     <a class="brand" href="#overview" aria-label="返回身体成分概览">
@@ -315,7 +379,40 @@ footer{margin-top:34px;padding-top:16px;font-size:11.5px;color:var(--label-4);di
   <a href="#daily"><i data-lucide="calendar-days"></i><span>单日</span></a>
 </nav>
 
-<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script>
+/* 内联图标集：替代 Lucide CDN，保证离线双击可用（零外部依赖是本项目硬约束） */
+const ICONS={
+ 'activity':'<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>',
+ 'chart-line':'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
+ 'person-standing':'<circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 6 2 6-2"/><path d="M12 10v4"/>',
+ 'calendar-days':'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>',
+ 'layout-dashboard':'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+ 'chevron-down':'<path d="m6 9 6 6 6-6"/>',
+ 'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+ 'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+ 'droplets':'<path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>',
+ 'dumbbell':'<path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/><path d="m2.5 21.5 1.4-1.4"/><path d="m20.1 3.9 1.4-1.4"/><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/><path d="m9.6 14.4 4.8-4.8"/>',
+ 'monitor':'<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+ 'sun':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+ 'moon':'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+ 'arrow-down-right':'<path d="m7 7 10 10"/><path d="M17 7v10H7"/>',
+ 'arrow-up-right':'<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+};
+function refreshIcons(root){
+ (root||document).querySelectorAll('[data-lucide]').forEach(node=>{
+   const name=node.getAttribute('data-lucide'),body=ICONS[name];
+   if(!body)return;
+   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+   svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');
+   svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','2');
+   svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');
+   svg.setAttribute('aria-hidden','true');svg.innerHTML=body;
+   for(const c of node.classList)svg.classList.add(c);
+   if(node.getAttribute('style'))svg.setAttribute('style',node.getAttribute('style'));
+   node.replaceWith(svg);
+ });
+}
+</script>
 <script>
 const DATA = [{"date": "2026-03-20", "weight": 67.5, "bf": 20.9, "musM": 50.5, "musP": 74.8, "proM": 10.4, "proP": 15.4, "watM": 39.5, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.1, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.3, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.2, "mLL": 8.5, "mRL": 8.5, "score": 77, "wk": "周五"}, {"date": "2026-03-21", "weight": 67.3, "bf": 20.9, "musM": 50.3, "musP": 74.7, "proM": 10.3, "proP": 15.3, "watM": 39.4, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.1, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.8, "fRA": 0.8, "fTr": 7.2, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.5, "mRL": 8.5, "score": 76, "wk": "周六"}, {"date": "2026-03-25", "weight": 66.8, "bf": 21.0, "musM": 49.9, "musP": 74.7, "proM": 10.3, "proP": 15.4, "watM": 39.1, "watP": 58.5, "bonM": 2.9, "bonP": 4.3, "fatM": 14.0, "skM": 28.5, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1510, "rec": 2190, "ffm": 52.8, "fLA": 0.8, "fRA": 0.8, "fTr": 7.2, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 22.9, "mLL": 8.4, "mRL": 8.4, "score": 76, "wk": "周三"}, {"date": "2026-03-26", "weight": 66.6, "bf": 21.0, "musM": 49.7, "musP": 74.6, "proM": 10.2, "proP": 15.3, "watM": 39.0, "watP": 58.6, "bonM": 2.9, "bonP": 4.4, "fatM": 14.0, "skM": 28.4, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 27, "smi": 7.2, "bmr": 1506, "rec": 2184, "ffm": 52.6, "fLA": 0.8, "fRA": 0.8, "fTr": 7.1, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 22.8, "mLL": 8.3, "mRL": 8.4, "score": 76, "wk": "周四"}, {"date": "2026-03-27", "weight": 67.25, "bf": 20.6, "musM": 50.5, "musP": 75.1, "proM": 10.4, "proP": 15.5, "watM": 39.5, "watP": 58.8, "bonM": 2.9, "bonP": 4.3, "fatM": 13.8, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.2, "mLL": 8.5, "mRL": 8.5, "score": 77, "wk": "周五"}, {"date": "2026-03-28", "weight": 66.95, "bf": 20.3, "musM": 50.4, "musP": 75.3, "proM": 10.3, "proP": 15.4, "watM": 39.5, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.6, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周六"}, {"date": "2026-03-29", "weight": 67.1, "bf": 20.4, "musM": 50.5, "musP": 75.3, "proM": 10.3, "proP": 15.4, "watM": 39.6, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.7, "skM": 28.8, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.2, "fRL": 2.2, "mLA": 2.7, "mRA": 2.7, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周日"}, {"date": "2026-04-01", "weight": 67.05, "bf": 20.5, "musM": 50.4, "musP": 75.2, "proM": 10.3, "proP": 15.4, "watM": 39.5, "watP": 59.0, "bonM": 2.9, "bonP": 4.3, "fatM": 13.7, "skM": 28.7, "vis": 6.0, "shape": "倒三角型", "type": "偏胖", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 7.0, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.4, "score": 77, "wk": "周三"}, {"date": "2026-04-07", "weight": 66.45, "bf": 19.7, "musM": 50.4, "musP": 75.9, "proM": 10.3, "proP": 15.5, "watM": 39.5, "watP": 59.5, "bonM": 2.9, "bonP": 4.4, "fatM": 13.1, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.8, "fRA": 0.8, "fTr": 6.7, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.1, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周二"}, {"date": "2026-04-09", "weight": 66.35, "bf": 19.8, "musM": 50.3, "musP": 75.9, "proM": 10.3, "proP": 15.5, "watM": 39.4, "watP": 59.4, "bonM": 2.9, "bonP": 4.4, "fatM": 13.1, "skM": 28.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.7, "fLL": 2.1, "fRL": 2.1, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周四"}, {"date": "2026-04-12", "weight": 66.2, "bf": 19.6, "musM": 50.3, "musP": 76.0, "proM": 10.3, "proP": 15.6, "watM": 39.4, "watP": 59.5, "bonM": 2.9, "bonP": 4.4, "fatM": 13.0, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1519, "rec": 2203, "ffm": 53.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.6, "fLL": 2.1, "fRL": 2.2, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 77, "wk": "周日"}, {"date": "2026-04-15", "weight": 66.1, "bf": 19.4, "musM": 50.4, "musP": 76.2, "proM": 10.3, "proP": 15.6, "watM": 39.5, "watP": 59.8, "bonM": 2.9, "bonP": 4.4, "fatM": 12.8, "skM": 28.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.3, "bmr": 1521, "rec": 2205, "ffm": 53.3, "fLA": 0.7, "fRA": 0.7, "fTr": 6.5, "fLL": 2.1, "fRL": 2.1, "mLA": 2.6, "mRA": 2.6, "mTr": 23.0, "mLL": 8.4, "mRL": 8.5, "score": 78, "wk": "周三"}, {"date": "2026-04-19", "weight": 66.05, "bf": 19.0, "musM": 50.6, "musP": 76.7, "proM": 10.4, "proP": 15.8, "watM": 39.6, "watP": 60.0, "bonM": 2.9, "bonP": 4.4, "fatM": 12.5, "skM": 28.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1526, "rec": 2213, "ffm": 53.5, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.1, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周日"}, {"date": "2026-04-26", "weight": 65.85, "bf": 18.9, "musM": 50.5, "musP": 76.7, "proM": 10.5, "proP": 16.0, "watM": 39.5, "watP": 60.0, "bonM": 2.9, "bonP": 4.4, "fatM": 12.4, "skM": 28.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1523, "rec": 2208, "ffm": 53.4, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.0, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周日"}, {"date": "2026-05-03", "weight": 67.75, "bf": 17.8, "musM": 52.6, "musP": 77.7, "proM": 10.8, "proP": 16.0, "watM": 41.2, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周日"}, {"date": "2026-05-09", "weight": 66.75, "bf": 19.3, "musM": 50.9, "musP": 76.3, "proM": 10.4, "proP": 15.6, "watM": 39.9, "watP": 59.8, "bonM": 2.9, "bonP": 4.3, "fatM": 12.9, "skM": 29.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 26, "smi": 7.4, "bmr": 1532, "rec": 2221, "ffm": 53.8, "fLA": 0.7, "fRA": 0.7, "fTr": 6.6, "fLL": 2.1, "fRL": 2.1, "mLA": 2.7, "mRA": 2.7, "mTr": 23.3, "mLL": 8.5, "mRL": 8.5, "score": 78, "wk": "周六"}, {"date": "2026-05-11", "weight": 66.95, "bf": 19.0, "musM": 51.3, "musP": 76.7, "proM": 10.6, "proP": 15.8, "watM": 40.1, "watP": 59.9, "bonM": 2.9, "bonP": 4.3, "fatM": 12.7, "skM": 29.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.5, "bmr": 1541, "rec": 2234, "ffm": 54.2, "fLA": 0.7, "fRA": 0.7, "fTr": 6.5, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.5, "mLL": 8.6, "mRL": 8.7, "score": 79, "wk": "周一"}, {"date": "2026-05-13", "weight": 66.65, "bf": 18.5, "musM": 51.4, "musP": 77.2, "proM": 10.6, "proP": 15.9, "watM": 40.2, "watP": 60.4, "bonM": 2.9, "bonP": 4.4, "fatM": 12.3, "skM": 29.3, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.5, "bmr": 1543, "rec": 2237, "ffm": 54.3, "fLA": 0.7, "fRA": 0.7, "fTr": 6.4, "fLL": 2.0, "fRL": 2.1, "mLA": 2.7, "mRA": 2.7, "mTr": 23.5, "mLL": 8.6, "mRL": 8.6, "score": 79, "wk": "周三"}, {"date": "2026-05-21", "weight": 66.2, "bf": 18.4, "musM": 51.1, "musP": 77.2, "proM": 10.5, "proP": 15.9, "watM": 40.0, "watP": 60.4, "bonM": 2.9, "bonP": 4.4, "fatM": 12.2, "skM": 29.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.4, "bmr": 1536, "rec": 2227, "ffm": 54.0, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.7, "mRA": 2.7, "mTr": 23.4, "mLL": 8.5, "mRL": 8.6, "score": 79, "wk": "周四"}, {"date": "2026-05-26", "weight": 67.55, "bf": 18.4, "musM": 52.2, "musP": 77.3, "proM": 10.7, "proP": 15.9, "watM": 40.8, "watP": 60.4, "bonM": 2.9, "bonP": 4.3, "fatM": 12.4, "skM": 29.6, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1560, "rec": 2262, "ffm": 55.1, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周二"}, {"date": "2026-06-01", "weight": 67.45, "bf": 18.0, "musM": 52.3, "musP": 77.6, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.8, "bonM": 3.0, "bonP": 4.5, "fatM": 12.1, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.8, "mRL": 8.8, "score": 80, "wk": "周一"}, {"date": "2026-06-02", "weight": 67.7, "bf": 17.8, "musM": 52.6, "musP": 77.7, "proM": 10.8, "proP": 16.0, "watM": 41.2, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.7, "fRA": 0.7, "fTr": 6.3, "fLL": 2.0, "fRL": 2.0, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.9, "mRL": 8.9, "score": 81, "wk": "周二"}, {"date": "2026-06-04", "weight": 67.15, "bf": 17.6, "musM": 52.3, "musP": 77.9, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 61.1, "bonM": 3.0, "bonP": 4.5, "fatM": 11.8, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周四"}, {"date": "2026-06-05", "weight": 66.8, "bf": 17.6, "musM": 52.0, "musP": 77.8, "proM": 10.7, "proP": 16.0, "watM": 40.7, "watP": 60.9, "bonM": 3.0, "bonP": 4.5, "fatM": 11.8, "skM": 29.7, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1558, "rec": 2259, "ffm": 55.0, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.8, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周五"}, {"date": "2026-06-06", "weight": 66.7, "bf": 17.2, "musM": 52.3, "musP": 78.4, "proM": 10.7, "proP": 16.0, "watM": 40.9, "watP": 61.3, "bonM": 2.9, "bonP": 4.3, "fatM": 11.5, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1562, "rec": 2265, "ffm": 55.2, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周六"}, {"date": "2026-06-09", "weight": 67.5, "bf": 18.0, "musM": 52.4, "musP": 77.6, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.7, "bonM": 2.9, "bonP": 4.3, "fatM": 12.2, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.7, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周二"}, {"date": "2026-06-10", "weight": 67.4, "bf": 18.0, "musM": 52.4, "musP": 77.7, "proM": 10.7, "proP": 15.9, "watM": 41.0, "watP": 60.8, "bonM": 2.9, "bonP": 4.3, "fatM": 12.1, "skM": 29.8, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.7, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.8, "score": 80, "wk": "周三"}, {"date": "2026-06-11", "weight": 67.4, "bf": 17.6, "musM": 52.5, "musP": 77.9, "proM": 10.7, "proP": 15.9, "watM": 41.2, "watP": 61.1, "bonM": 3.0, "bonP": 4.5, "fatM": 11.9, "skM": 29.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1569, "rec": 2275, "ffm": 55.5, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.7, "score": 81, "wk": "周四"}, {"date": "2026-06-15", "weight": 67.1, "bf": 17.1, "musM": 52.6, "musP": 78.4, "proM": 10.7, "proP": 15.9, "watM": 41.3, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.5, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周一"}, {"date": "2026-06-16", "weight": 67.25, "bf": 17.0, "musM": 52.8, "musP": 78.6, "proM": 10.9, "proP": 16.2, "watM": 41.3, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.4, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1575, "rec": 2284, "ffm": 55.8, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.8, "fRL": 1.8, "mLA": 2.9, "mRA": 2.9, "mTr": 24.2, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周二"}, {"date": "2026-06-17", "weight": 67.15, "bf": 17.1, "musM": 52.6, "musP": 78.4, "proM": 10.8, "proP": 16.1, "watM": 41.2, "watP": 61.4, "bonM": 3.0, "bonP": 4.5, "fatM": 11.5, "skM": 30.0, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1571, "rec": 2278, "ffm": 55.6, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.8, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周三"}, {"date": "2026-06-21", "weight": 67.7, "bf": 17.5, "musM": 52.9, "musP": 78.1, "proM": 10.9, "proP": 16.1, "watM": 41.4, "watP": 61.2, "bonM": 3.0, "bonP": 4.4, "fatM": 11.8, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.6, "fRA": 0.6, "fTr": 6.1, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周日"}, {"date": "2026-06-22", "weight": 67.65, "bf": 17.3, "musM": 53.0, "musP": 78.4, "proM": 10.9, "proP": 16.1, "watM": 41.4, "watP": 61.2, "bonM": 2.9, "bonP": 4.3, "fatM": 11.7, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.8, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.2, "mLL": 8.9, "mRL": 8.9, "score": 81, "wk": "周一"}, {"date": "2026-06-29", "weight": 68.1, "bf": 17.8, "musM": 53.0, "musP": 77.8, "proM": 10.9, "proP": 16.0, "watM": 41.5, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.1, "skM": 30.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.8, "bmr": 1580, "rec": 2291, "ffm": 56.0, "fLA": 0.6, "fRA": 0.6, "fTr": 6.3, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.3, "mLL": 8.8, "mRL": 8.9, "score": 81, "wk": "周一"}, {"date": "2026-07-03", "weight": 66.95, "bf": 17.4, "musM": 52.4, "musP": 78.3, "proM": 10.8, "proP": 16.1, "watM": 40.9, "watP": 61.1, "bonM": 2.9, "bonP": 4.3, "fatM": 11.6, "skM": 29.9, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.6, "bmr": 1564, "rec": 2268, "ffm": 55.3, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 23.9, "mLL": 8.7, "mRL": 8.7, "score": 81, "wk": "周五"}, {"date": "2026-07-06", "weight": 68.2, "bf": 18.0, "musM": 52.9, "musP": 77.6, "proM": 10.8, "proP": 15.8, "watM": 41.5, "watP": 60.9, "bonM": 3.0, "bonP": 4.4, "fatM": 12.3, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.7, "fRA": 0.7, "fTr": 6.4, "fLL": 2.0, "fRL": 2.0, "mLA": 2.9, "mRA": 2.9, "mTr": 24.1, "mLL": 8.8, "mRL": 8.8, "score": 81, "wk": "周一"}, {"date": "2026-07-11", "weight": 67.2, "bf": 17.1, "musM": 52.7, "musP": 78.4, "proM": 10.8, "proP": 16.1, "watM": 41.3, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.5, "skM": 30.1, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1573, "rec": 2281, "ffm": 55.7, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.1, "mLL": 8.7, "mRL": 8.8, "score": 81, "wk": "周六"}, {"date": "2026-07-18", "weight": 66.65, "bf": 16.8, "musM": 52.5, "musP": 78.8, "proM": 10.7, "proP": 16.1, "watM": 41.1, "watP": 61.7, "bonM": 2.9, "bonP": 4.4, "fatM": 11.2, "skM": 30.0, "vis": 4.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.6, "bmr": 1567, "rec": 2272, "ffm": 55.4, "fLA": 0.6, "fRA": 0.6, "fTr": 5.8, "fLL": 1.9, "fRL": 1.9, "mLA": 2.8, "mRA": 2.8, "mTr": 24.0, "mLL": 8.7, "mRL": 8.7, "score": 81, "wk": "周六"}, {"date": "2026-07-19", "weight": 67.35, "bf": 17.0, "musM": 52.9, "musP": 78.6, "proM": 10.9, "proP": 16.2, "watM": 41.4, "watP": 61.5, "bonM": 3.0, "bonP": 4.5, "fatM": 11.4, "skM": 30.2, "vis": 4.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.7, "bmr": 1577, "rec": 2287, "ffm": 55.9, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.2, "mLL": 8.7, "mRL": 8.8, "score": 82, "wk": "周日"}, {"date": "2026-07-27", "weight": 68.25, "bf": 16.7, "musM": 53.8, "musP": 78.9, "proM": 11.1, "proP": 16.3, "watM": 42.1, "watP": 61.7, "bonM": 3.0, "bonP": 4.4, "fatM": 11.4, "skM": 30.6, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.9, "bmr": 1597, "rec": 2316, "ffm": 56.8, "fLA": 0.6, "fRA": 0.6, "fTr": 5.9, "fLL": 1.9, "fRL": 1.9, "mLA": 3.0, "mRA": 3.0, "mTr": 24.6, "mLL": 8.9, "mRL": 9.0, "score": 83, "wk": "周一"}, {"date": "2026-08-03", "weight": 68.35, "bf": 17.0, "musM": 53.7, "musP": 78.6, "proM": 11.1, "proP": 16.3, "watM": 42.0, "watP": 61.5, "bonM": 3.0, "bonP": 4.4, "fatM": 11.6, "skM": 30.6, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.9, "bmr": 1595, "rec": 2313, "ffm": 56.7, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.6, "mLL": 8.9, "mRL": 9.0, "score": 82, "wk": "周一"}, {"date": "2026-08-08", "weight": 67.3, "bf": 16.4, "musM": 53.3, "musP": 79.2, "proM": 11.0, "proP": 16.3, "watM": 41.7, "watP": 62.0, "bonM": 3.0, "bonP": 4.5, "fatM": 11.0, "skM": 30.3, "vis": 4.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 24, "smi": 7.8, "bmr": 1586, "rec": 2300, "ffm": 56.3, "fLA": 0.6, "fRA": 0.6, "fTr": 5.7, "fLL": 1.8, "fRL": 1.8, "mLA": 2.9, "mRA": 2.9, "mTr": 24.4, "mLL": 8.9, "mRL": 8.9, "score": 82, "wk": "周六"}, {"date": "2026-08-15", "weight": 67.45, "bf": 17.2, "musM": 52.8, "musP": 78.3, "proM": 10.9, "proP": 16.2, "watM": 41.3, "watP": 61.3, "bonM": 3.0, "bonP": 4.5, "fatM": 11.6, "skM": 30.2, "vis": 5.0, "shape": "倒三角型", "type": "健康型", "whr": 0.8, "bage": 25, "smi": 7.7, "bmr": 1575, "rec": 2284, "ffm": 55.8, "fLA": 0.6, "fRA": 0.6, "fTr": 6.0, "fLL": 1.9, "fRL": 1.9, "mLA": 2.9, "mRA": 2.9, "mTr": 24.2, "mLL": 8.7, "mRL": 8.8, "score": 81, "wk": "周六"}];
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -323,16 +420,146 @@ const NS='http://www.w3.org/2000/svg';
 const el=(t,a={})=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
 const txt=(x,y,s,o={})=>{const t=el('text',{x,y,'text-anchor':o.anchor||'start','font-size':o.size||11,fill:o.fill||'var(--label)','font-weight':o.weight||400});t.style.fontVariantNumeric='tabular-nums';if(o.op!=null)t.setAttribute('opacity',o.op);t.textContent=s;return t;};
 const sd=d=>d.slice(5).replace('-','/');
+/* 路径渐进绘制：折线像被“画出来”，各序列错峰入场 */
+function drawOn(path,order){
+ if(RM)return;
+ const delay=(order||0)*.09;
+ // 已有 dasharray 的虚线序列不能借用 dashoffset，改用透明度+轻微上浮入场
+ if(path.getAttribute('stroke-dasharray')&&path.getAttribute('stroke-dasharray')!=='none'){
+   path.style.opacity='0';path.style.transition='none';
+   requestAnimationFrame(()=>{path.style.transition=`opacity .5s ease ${delay+.12}s`;path.style.opacity='1';});
+   return;
+ }
+ let len=0;try{len=path.getTotalLength();}catch(e){return;}
+ if(!len||!isFinite(len))return;
+ path.style.strokeDasharray=`${len}`;path.style.strokeDashoffset=`${len}`;
+ path.style.transition='none';
+ requestAnimationFrame(()=>{
+   path.style.transition=`stroke-dashoffset .95s cubic-bezier(.22,.86,.24,1) ${delay}s`;
+   path.style.strokeDashoffset='0';
+ });
+}
+/* 单调三次插值：曲线平滑但绝不越过数据极值（健康数据不能因插值而“看起来更好”） */
+function smoothPath(pts){
+ const n=pts.length;if(n<2)return '';
+ if(n===2)return `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)} ${pts[1][1].toFixed(1)}`;
+ const dx=[],dy=[],m=[];
+ for(let i=0;i<n-1;i++){dx[i]=pts[i+1][0]-pts[i][0];dy[i]=pts[i+1][1]-pts[i][1];m[i]=dx[i]?dy[i]/dx[i]:0;}
+ const t=new Array(n);t[0]=m[0];t[n-1]=m[n-2];
+ for(let i=1;i<n-1;i++){
+   if(m[i-1]*m[i]<=0)t[i]=0;
+   else{const w1=2*dx[i]+dx[i-1],w2=dx[i]+2*dx[i-1];t[i]=(w1+w2)/(w1/m[i-1]+w2/m[i]);}
+ }
+ let d=`M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+ for(let i=0;i<n-1;i++){const h=dx[i]/3;
+   d+=` C${(pts[i][0]+h).toFixed(1)} ${(pts[i][1]+t[i]*h).toFixed(1)} ${(pts[i+1][0]-h).toFixed(1)} ${(pts[i+1][1]-t[i+1]*h).toFixed(1)} ${pts[i+1][0].toFixed(1)} ${pts[i+1][1].toFixed(1)}`;}
+ return d;
+}
 const tip=document.getElementById('tip');
 const first=DATA[0],last=DATA[DATA.length-1],N=DATA.length;
 let selDay=N-1;
-const refreshIcons=()=>window.lucide?.createIcons();
+
+/* ---------- 分段控件透镜：实测激活项几何，宽度随项形变 ---------- */
+const LENS_GROUPS=new Set();
+function placeLens(group,active){
+  if(!group)return;
+  const target=active||group.querySelector('.on,.current');
+  const box=group.getBoundingClientRect();
+  if(!target||!box.width){group.style.setProperty('--lens-o','0');return;}
+  const r=target.getBoundingClientRect(),cs=getComputedStyle(group);
+  const bl=parseFloat(cs.borderLeftWidth)||0,bt=parseFloat(cs.borderTopWidth)||0;
+  // 绝对定位元素随容器内容滚动，故需把 scrollLeft 加回，避免横向滚动时错位
+  group.style.setProperty('--lens-x',(r.left-box.left-bl+group.scrollLeft).toFixed(2)+'px');
+  group.style.setProperty('--lens-y',(r.top-box.top-bt+group.scrollTop).toFixed(2)+'px');
+  group.style.setProperty('--lens-w',r.width.toFixed(2)+'px');
+  group.style.setProperty('--lens-h',r.height.toFixed(2)+'px');
+  group.style.setProperty('--lens-o','1');
+  LENS_GROUPS.add(group);
+}
+function relayoutLenses(){LENS_GROUPS.forEach(g=>{if(g.isConnected)placeLens(g);});}
+/* 初始定位不能依赖 requestAnimationFrame：后台标签页不触发 rAF，
+   会导致以新标签页打开或恢复会话时透镜永远不初始化。改为直接调用 + 多重兜底。 */
+const LENS_SEL='.section-nav,.segmented,.mobile-nav';
+function initLenses(){document.querySelectorAll(LENS_SEL).forEach(g=>{if(g.querySelector('.on,.current'))placeLens(g);});}
+addEventListener('resize',relayoutLenses,{passive:true});
+addEventListener('load',initLenses);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)relayoutLenses();});
+if(document.fonts?.ready)document.fonts.ready.then(()=>{initLenses();relayoutLenses();});
+// 字号/布局变化时自愈
+if(window.ResizeObserver){const ro=new ResizeObserver(()=>relayoutLenses());
+  addEventListener('load',()=>document.querySelectorAll(LENS_SEL).forEach(g=>ro.observe(g)));}
+
+/* ---------- 物理透镜折射：按元素尺寸生成位移图 ----------
+   位移图把 X 位移编码进 R 通道、Y 位移编码进 G 通道（128 = 不位移）。
+   中心区保持中性 → 玻璃中央通透；仅在 bezel 斜面带内向外快速偏折 → 边缘产生真实的掰弯拉伸。
+   三个通道用递增的 scale 造成色散（长波偏折小），对应 IOR 随波长变化。 */
+const LENS = {bezel:0.34, ior:1.46, disp:0.22};   // 斜面占比 / 折射率 / 色散强度
+function lensRamp(px,bezelPx,chan){
+  const b=Math.max(2,Math.min(bezelPx,px/2-1)), p=(b/px*100);
+  const lo=chan==='r'?'rgb(0,0,0)':'rgb(0,0,0)';
+  const mid=chan==='r'?'rgb(128,0,0)':'rgb(0,128,0)';
+  const hi=chan==='r'?'rgb(255,0,0)':'rgb(0,255,0)';
+  const dir=chan==='r'?'x1="0" y1="0" x2="1" y2="0"':'x1="0" y1="0" x2="0" y2="1"';
+  return `<linearGradient id="g${chan}" ${dir}>
+    <stop offset="0%" stop-color="${lo}"/>
+    <stop offset="${p.toFixed(2)}%" stop-color="${mid}"/>
+    <stop offset="${(100-p).toFixed(2)}%" stop-color="${mid}"/>
+    <stop offset="100%" stop-color="${hi}"/></linearGradient>`;
+}
+function lensMapURI(w,h,r,chan){
+  const bx=Math.min(w,h)*LENS.bezel;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
+    +`<defs>${lensRamp(chan==='r'?w:h,bx,chan)}</defs>`
+    +`<rect width="${w}" height="${h}" rx="${r}" ry="${r}" fill="url(#g${chan})"/></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+let lensSeq=0;
+function buildLensFilter(surface){
+  const rect=surface.getBoundingClientRect();
+  const w=Math.max(8,Math.round(rect.width)), h=Math.max(8,Math.round(rect.height));
+  const r=parseFloat(getComputedStyle(surface).borderTopLeftRadius)||0;
+  let id=surface.dataset.lensFilter;
+  const defs=document.getElementById('lensDefs');
+  if(!defs)return null;
+  if(!id){id='lens-'+(++lensSeq);surface.dataset.lensFilter=id;}
+  const old=document.getElementById(id); if(old)old.remove();
+  // 折射强度由折射率与斜面宽度共同决定
+  const k=(LENS.ior-1)*Math.min(w,h)*LENS.bezel*0.42;
+  const f=document.createElementNS(NS,'filter');
+  f.setAttribute('id',id);
+  f.setAttribute('color-interpolation-filters','sRGB');
+  f.setAttribute('x','-6%');f.setAttribute('y','-6%');
+  f.setAttribute('width','112%');f.setAttribute('height','112%');
+  f.innerHTML=
+    `<feImage href="${lensMapURI(w,h,r,'r')}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="mx"/>`+
+    `<feImage href="${lensMapURI(w,h,r,'g')}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="my"/>`+
+    `<feComposite in="mx" in2="my" operator="arithmetic" k2="1" k3="1" result="map"/>`+
+    `<feGaussianBlur in="map" stdDeviation="0.7" result="smap"/>`+
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="cr" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>`+
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="cg" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/>`+
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="cb" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/>`+
+    `<feDisplacementMap in="cr" in2="smap" scale="${(k*(1-LENS.disp)).toFixed(2)}" xChannelSelector="R" yChannelSelector="G" result="dr"/>`+
+    `<feDisplacementMap in="cg" in2="smap" scale="${k.toFixed(2)}" xChannelSelector="R" yChannelSelector="G" result="dg"/>`+
+    `<feDisplacementMap in="cb" in2="smap" scale="${(k*(1+LENS.disp)).toFixed(2)}" xChannelSelector="R" yChannelSelector="G" result="db"/>`+
+    `<feComposite in="dr" in2="dg" operator="arithmetic" k2="1" k3="1" result="drg"/>`+
+    `<feComposite in="drg" in2="db" operator="arithmetic" k2="1" k3="1"/>`;
+  defs.appendChild(f);
+  return id;
+}
+function applyLens(surface){
+  if(!document.documentElement.classList.contains('liquid-refraction'))return;
+  const id=buildLensFilter(surface); if(!id)return;
+  const blur=getComputedStyle(surface).getPropertyValue('--glass-blur').trim()||'20px';
+  const fx=`url(#${id}) blur(${blur}) saturate(190%) contrast(1.04)`;
+  surface.style.backdropFilter=fx;surface.style.webkitBackdropFilter=fx;
+}
+function refreshLenses(){document.querySelectorAll('.liquid-surface').forEach(applyLens);}
 
 /* ---------- progressive Liquid Glass ---------- */
 const ua=navigator.userAgent;
 const iosWebKit=/(iPhone|iPad|iPod)/i.test(ua)||(/Macintosh/i.test(ua)&&navigator.maxTouchPoints>1);
 const safariLike=iosWebKit||(/Safari/i.test(ua)&&!/(Chrome|Chromium|Edg|OPR|Android)/i.test(ua));
-if(!safariLike&&CSS.supports?.('backdrop-filter','url("#liquid-refraction") blur(12px)')){
+if(!safariLike&&CSS.supports?.('backdrop-filter','url("#x") blur(12px)')){
   document.documentElement.classList.add('liquid-refraction');
 }
 function initLiquidSurfaces(){
@@ -345,8 +572,13 @@ function initLiquidSurfaces(){
       const y=Math.max(0,Math.min(100,(e.clientY-r.top)/Math.max(1,r.height)*100));
       surface.style.setProperty('--glass-x',`${x.toFixed(1)}%`);
       surface.style.setProperty('--glass-y',`${y.toFixed(1)}%`);
+      // 眩光带：角度随指针横向偏移摆动，位置随指针推移，模拟光源掠过玻璃
+      surface.style.setProperty('--glare-a',`${(104+(x-50)*0.32).toFixed(1)}deg`);
+      surface.style.setProperty('--glare-p',`${(20+x*0.6).toFixed(1)}%`);
     };
-    const settle=()=>{surface.classList.remove('is-energized');surface.style.setProperty('--glass-x','50%');surface.style.setProperty('--glass-y','0%');};
+    const settle=()=>{surface.classList.remove('is-energized');
+      surface.style.setProperty('--glass-x','50%');surface.style.setProperty('--glass-y','0%');
+      surface.style.setProperty('--glare-a','104deg');surface.style.setProperty('--glare-p','44%');};
     surface.addEventListener('pointermove',point,{passive:true});
     surface.addEventListener('pointerdown',e=>{point(e);surface.classList.add('is-energized');},{passive:true});
     surface.addEventListener('pointerup',()=>surface.classList.remove('is-energized'),{passive:true});
@@ -355,6 +587,11 @@ function initLiquidSurfaces(){
   });
 }
 initLiquidSurfaces();
+refreshLenses();
+addEventListener('load',refreshLenses);
+addEventListener('resize',()=>{clearTimeout(window.__lensT);window.__lensT=setTimeout(refreshLenses,140);},{passive:true});
+if(window.ResizeObserver){const lro=new ResizeObserver(es=>es.forEach(e=>applyLens(e.target)));
+  document.querySelectorAll('.liquid-surface').forEach(x=>lro.observe(x));}
 
 /* ---------- appearance: auto, light, dark ---------- */
 const themeButton=document.getElementById('themeToggle');
@@ -451,7 +688,7 @@ refreshIcons();
 function spark(k,color){const v=arr(k),w=150,h=30,mn=Math.min(...v),mx=Math.max(...v),p=4;
  const X=i=>p+i*(w-2*p)/(v.length-1),Y=val=>h-p-(val-mn)/((mx-mn)||1)*(h-2*p);
  const s=el('svg',{viewBox:`0 0 ${w} ${h}`,preserveAspectRatio:'none',class:'spark'});s.style.width='100%';s.style.display='block';
- let d='';v.forEach((val,i)=>d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(val).toFixed(1)+' ');
+ const d=smoothPath(v.map((val,i)=>[X(i),Y(val)]));
  s.append(el('path',{d:d+`L${X(v.length-1)} ${h} L${X(0)} ${h} Z`,fill:color,opacity:.08}));
  s.append(el('path',{d,fill:'none',stroke:color,'stroke-width':1.8,'stroke-linejoin':'round','stroke-linecap':'round'}));
  s.append(el('circle',{cx:X(v.length-1),cy:Y(v[v.length-1]),r:2.4,fill:color}));return s;}
@@ -481,7 +718,7 @@ function geom(host,series){
   const X=i=>PAD_L+i*(plotW-PAD_L-PAD_R)/(N-1);
   const axisOf=s=>s.unit===unitL?0:1;
   const dom=[0,1].map(ax=>{let lo=1e9,hi=-1e9;series.forEach(s=>{if(axisOf(s)===ax)s.v.forEach(x=>{lo=Math.min(lo,x);hi=Math.max(hi,x);});});if(lo===1e9)return null;const p=(hi-lo)*0.22||1;return[lo-p,hi+p];});
-  return {unitL,unitR,dual,yW,ryW,avail,plotW,scrolls,X,axisOf,dom};
+  return {unitL,unitR,dual,yW,ryW,avail,plotW,scrolls,X,axisOf,dom,step:(plotW-PAD_L-PAD_R)/Math.max(1,N-1)};
 }
 function Y(val,dom){return T+(1-(val-dom[0])/(dom[1]-dom[0]))*(PLOT_H-T-B);}
 function xLabelIdx(plotW){const step=(plotW-PAD_L-PAD_R)/(N-1);const xstep=Math.max(1,Math.ceil(64/step));
@@ -526,12 +763,16 @@ function buildTrend(series,{morph=false}={}){
     xLabelIdx(g.plotW).forEach(i=>svg.append(txt(g.X(i),PLOT_H-11,sd(DATA[i].date),{anchor:'middle',size:10,fill:'var(--label-4)'})));
     // series
     series.forEach((s,si)=>{const ax=g.axisOf(s), useDom=ax===0?dCur:g.dom[1];
-      let d='';s.v.forEach((val,i)=>d+=(i?'L':'M')+g.X(i).toFixed(1)+' '+Y(val,useDom).toFixed(1)+' ');
+      const d=smoothPath(s.v.map((val,i)=>[g.X(i),Y(val,useDom)]));
       if(si===0){const gid='grad';const lg=el('linearGradient',{id:gid,x1:0,y1:0,x2:0,y2:1});
-        lg.append(el('stop',{offset:'0%','stop-color':s.c,'stop-opacity':.16}),el('stop',{offset:'100%','stop-color':s.c,'stop-opacity':0}));svg.append(lg);
+        lg.append(el('stop',{offset:'0%','stop-color':s.c,'stop-opacity':.20}),
+                  el('stop',{offset:'46%','stop-color':s.c,'stop-opacity':.07}),
+                  el('stop',{offset:'100%','stop-color':s.c,'stop-opacity':0}));svg.append(lg);
         svg.append(el('path',{d:d+`L${g.X(N-1)} ${PLOT_H-B} L${g.X(0)} ${PLOT_H-B} Z`,fill:`url(#${gid})`}));}
-      svg.append(el('path',{d,fill:'none',stroke:s.c,'stroke-width':si===0?2.6:1.9,'stroke-linejoin':'round','stroke-linecap':'round','stroke-dasharray':si===0?'none':'5 4'}));
-      s.v.forEach((val,i)=>svg.append(el('circle',{cx:g.X(i),cy:Y(val,useDom),r:si===0?2.4:1.9,fill:'var(--card)',stroke:s.c,'stroke-width':1.4})));
+      const line=el('path',{d,fill:'none',stroke:s.c,'stroke-width':si===0?2.6:1.9,'stroke-linejoin':'round','stroke-linecap':'round','stroke-dasharray':si===0?'none':'5 4'});
+      svg.append(line);drawOn(line,si);
+      const pr=g.step<14?1.7:(si===0?2.4:1.9);
+      s.v.forEach((val,i)=>svg.append(el('circle',{cx:g.X(i),cy:Y(val,useDom),r:pr,fill:'var(--surface)',stroke:s.c,'stroke-width':g.step<14?1.1:1.4})));
     });
     // persistent labels on primary
     const p=series[0],lab=Math.max(1,Math.round(N/12)),dec=M[p.key]?M[p.key].dec:1;
@@ -582,7 +823,8 @@ const BOARDS={
 let board='core',sel=[...BOARDS.core.def];
 const boardTabs=document.getElementById('boardTabs');
 Object.entries(BOARDS).forEach(([k,b],index)=>{const btn=document.createElement('button');btn.textContent=b.label;if(k===board)btn.classList.add('on');
- btn.onclick=()=>{board=k;sel=[...b.def];boardTabs.style.setProperty('--active-index',index);[...boardTabs.children].forEach(x=>x.classList.remove('on'));btn.classList.add('on');renderChips();drawTrend(true);};boardTabs.appendChild(btn);});
+ btn.onclick=()=>{board=k;sel=[...b.def];[...boardTabs.children].forEach(x=>x.classList.remove('on'));btn.classList.add('on');placeLens(boardTabs,btn);renderChips();drawTrend(true);};boardTabs.appendChild(btn);});
+placeLens(boardTabs);
 const distinctUnits=keys=>[...new Set(keys.map(k=>M[k].unit))];
 function renderChips(){const box=document.getElementById('metricChips');box.innerHTML='';
  BOARDS[board].metrics.forEach(k=>{const m=M[k],on=sel.includes(k),blocked=!on && distinctUnits([...sel,k]).length>2;
@@ -624,9 +866,10 @@ function buildSeg(){
   for(let q=0;q<=4;q++){const yy=T+q*(PLOT_H-T-B)/4;svg.append(el('line',{x1:0,y1:yy,x2:g.plotW,y2:yy,stroke:'var(--sep)','stroke-width':q===4?1:.7}));
     const val=dom[1]-(q/4)*(dom[1]-dom[0]);yax.append(txt(g.yW-8,yy+3,val.toFixed(1),{anchor:'end',size:10,fill:'var(--label-4)'}));}
   xLabelIdx(g.plotW).forEach(i=>svg.append(txt(g.X(i),PLOT_H-11,sd(DATA[i].date),{anchor:'middle',size:10,fill:'var(--label-4)'})));
-  series.forEach(s=>{let d='';s.v.forEach((val,i)=>d+=(i?'L':'M')+g.X(i).toFixed(1)+' '+Y(val,dom).toFixed(1)+' ');
-    svg.append(el('path',{d,fill:'none',stroke:s.c,'stroke-width':2.1,'stroke-linejoin':'round','stroke-linecap':'round'}));
-    s.v.forEach((val,i)=>svg.append(el('circle',{cx:g.X(i),cy:Y(val,dom),r:1.9,fill:'var(--card)',stroke:s.c,'stroke-width':1.3})));});
+  series.forEach(s=>{const d=smoothPath(s.v.map((val,i)=>[g.X(i),Y(val,dom)]));
+    const line=el('path',{d,fill:'none',stroke:s.c,'stroke-width':2.1,'stroke-linejoin':'round','stroke-linecap':'round'});
+    svg.append(line);drawOn(line,series.indexOf(s));
+    s.v.forEach((val,i)=>svg.append(el('circle',{cx:g.X(i),cy:Y(val,dom),r:g.step<14?1.5:1.9,fill:'var(--surface)',stroke:s.c,'stroke-width':1.3})));});
   svg.append(el('line',{x1:g.X(selDay),y1:T,x2:g.X(selDay),y2:PLOT_H-B,stroke:'var(--label-3)','stroke-width':1,opacity:.28,'stroke-dasharray':'3 3'}));
   const hl=el('line',{x1:0,y1:T,x2:0,y2:PLOT_H-B,stroke:'var(--label-3)','stroke-width':1,opacity:0});svg.append(hl);
   const hit=el('rect',{x:0,y:T,width:g.plotW,height:PLOT_H-T-B,fill:'transparent',style:'cursor:pointer'});svg.append(hit);
@@ -640,9 +883,10 @@ function buildSeg(){
   refreshIcons();
 }
 const segTabs=[...document.querySelectorAll('[data-seg]')];
-segTabs.forEach((b,index)=>b.onclick=()=>{segTabs.forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('segTabs').style.setProperty('--active-index',index);segKind=b.dataset.seg;
+segTabs.forEach((b)=>b.onclick=()=>{segTabs.forEach(x=>x.classList.remove('on'));b.classList.add('on');placeLens(document.getElementById('segTabs'),b);segKind=b.dataset.seg;
   const host=document.getElementById('segChart').querySelector('.cscroll svg');if(host&&!RM){host.style.opacity=0;setTimeout(buildSeg,140);}else buildSeg();});
 buildSeg();
+placeLens(document.getElementById('segTabs'));
 
 /* ---------- single-day view with materializing calendar ---------- */
 const dateIndex=new Map(DATA.map((d,i)=>[d.date,i]));
@@ -718,9 +962,11 @@ function revealSpring(node){
 const navLinks=[...document.querySelectorAll('.mobile-nav a,.section-nav a')];
 const navIds=['overview','trends','segments','daily'];
 const navById=id=>{
- const index=Math.max(0,navIds.indexOf(id));
- document.querySelectorAll('.mobile-nav,.section-nav').forEach(nav=>nav.style.setProperty('--active-index',index));
  navLinks.forEach(a=>a.classList.toggle('current',a.getAttribute('href')===`#${id}`));
+ document.querySelectorAll('.mobile-nav,.section-nav').forEach(nav=>{
+   const active=nav.querySelector(`a[href="#${id}"]`);
+   if(active&&nav.offsetParent!==null)placeLens(nav,active);
+ });
 };
 const navObserver=new IntersectionObserver(entries=>{
  const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
